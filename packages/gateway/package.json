@@ -8,8 +8,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "cross-env NODE_ENV=development rollup --config rollup.config.ts --configPlugin typescript -w",
-    "build": "cross-env NODE_ENV=production rollup --config rollup.config.ts --configPlugin typescript rollup",
+    "start": "cross-env NODE_ENV=development gulp watch",
+    "build": "cross-env NODE_ENV=production gulp build",
     "dev:app": "node ./dist/main.js"
   },
   "devDependencies": {
@@ -17,9 +17,13 @@
     "@rollup/plugin-typescript": "^8.4.0",
     "@types/fs-extra": "^9.0.13",
     "@types/koa": "^2.13.5",
+    "@types/koa-bodyparser": "^4.3.7",
     "@types/koa__router": "^8.0.11",
     "cross-env": "^7.0.3",
+    "gulp": "^4.0.2",
+    "gulp-typescript": "^6.0.0-alpha.1",
     "rollup": "^2.79.0",
+    "tslib": "^2.4.0",
     "typescript": "^4.8.2"
   },
   "dependencies": {
@@ -27,6 +31,7 @@
     "dotenv": "^16.0.2",
     "fs-extra": "^10.1.0",
     "koa": "^2.13.4",
+    "koa-bodyparser": "^4.3.0",
     "winston": "^3.8.1",
     "winston-daily-rotate-file": "^4.7.1"
   }

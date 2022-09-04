@@ -1,0 +1,19 @@
+{
+  "name": "@x-gateway/interface",
+  "version": "1.0.0",
+  "description": "Api interface of x-gateway",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.js",
+  "module": "./lib/index.js",
+  "type": "module",
+  "author": "tonywho",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "tsc -w",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "typescript": "^4.8.2"
+  }
+}

@@ -1,7 +1,7 @@
 {
-  "name": "x-gateway",
+  "name": "@x-gateway/gateway",
   "version": "1.0.0",
-  "description": "A configurable application layer gateway with authentication",
+  "description": "A configurable application layer gateway",
   "author": "tonywho",
   "license": "MIT",
   "private": true,

@@ -29,13 +29,8 @@ function getItem(
 }
 
 const items: MenuItem[] = [
-  getItem(<Link to={'/'}>Dashboard</Link>, '1', <CalendarOutlined />),
+  getItem(<Link to={'/'}>代理规则配置</Link>, '1', <CalendarOutlined />),
   getItem('Navigation Two', '2', <CalendarOutlined />),
-  getItem('Navigation Two', 'sub1', <AppstoreOutlined />, [
-    getItem('Option 3', '3'),
-    getItem('Option 4', '4'),
-    getItem('Submenu', 'sub1-2', null, [getItem('Option 5', '5'), getItem('Option 6', '6')]),
-  ]),
   getItem('Navigation Three', 'sub2', <SettingOutlined />, [
     getItem('Option 7', '7'),
     getItem('Option 8', '8'),

@@ -1,7 +1,9 @@
-export interface AddProxyRequest {
+import Joi from 'joi';
+export interface AddHttpProxyRequest {
     name: string;
     host: string;
     path: string;
+    port: number;
     proxyHost: string;
     proxyPort: number;
     proxyProtocol: ProxyProtocol;
@@ -13,11 +15,6 @@ export declare enum ProxyStatus {
     stopped = 0,
     running = 1
 }
-export interface AddProxyResponse {
-    name: string;
-    host: string;
-    proxyHost: string;
-    proxyPort: number;
-    proxyProtocol: 'http';
-    status: ProxyStatus;
+export interface AddHttpProxyResponse {
 }
+export declare const AddHttpRequestValidator: Joi.ObjectSchema<AddHttpProxyRequest>;

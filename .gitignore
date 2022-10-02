@@ -3,3 +3,4 @@ logs/
 dist/
 .DS_Store
 sqlite
+cert

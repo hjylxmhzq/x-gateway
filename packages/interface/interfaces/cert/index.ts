@@ -31,6 +31,7 @@ export interface DeployedCert {
   createdBy: string;
   createdAt: number;
   domain: string;
+  useForWebClient: number;
 }
 
 export interface GetAllDelployedCertRequest {
@@ -38,3 +39,14 @@ export interface GetAllDelployedCertRequest {
 }
 
 export type GetAllDelployedCertResponse = DeployedCert[];
+
+export interface SetCertForWebClientRequest {
+  name: string;
+}
+
+export type SetCertForWebClientResponse = DeployedCert[];
+
+
+export const SetCertForWebClientRequestValidator = Joi.object<SetCertForWebClientRequest>({
+  name: Joi.string().min(1).max(200).required(),
+});

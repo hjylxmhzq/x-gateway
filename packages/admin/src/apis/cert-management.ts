@@ -1,4 +1,4 @@
-import { RequestNewCertRequest, RequestNewCertResponse, GetRunningCertProcessResponse, GetAllDelployedCertResponse } from "@x-gateway/interface";
+import { RequestNewCertRequest, RequestNewCertResponse, GetRunningCertProcessResponse, GetAllDelployedCertResponse, SetCertForWebClientRequest, SetCertForWebClientResponse } from "@x-gateway/interface";
 import { post } from "./common";
 
 export const requestNewCert = async (params: RequestNewCertRequest) => {
@@ -13,5 +13,10 @@ export const getRunningCertProcess = async () => {
 
 export const getAllDeployedCerts = async () => {
   const result = await post<GetAllDelployedCertResponse>('/cert/get-deployed-certs', {});
+  return result;
+}
+
+export const setCertForWebClient = async (params: SetCertForWebClientRequest) => {
+  const result = await post<SetCertForWebClientResponse>('/cert/set-cert-for-webclient', params);
   return result;
 }

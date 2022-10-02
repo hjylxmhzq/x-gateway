@@ -1,7 +1,7 @@
 import Router from '@koa/router';
-import { createCert, getAllCerts, getRunningProcess } from '../services/cert';
+import { createCert, getAllCerts, getRunningProcess, setCertForWebClient } from '../services/cert';
 import { resFac } from '../utils/response';
-import { RequestNewCertRequestValidator, RequestNewCertResponse, RequestNewCertRequest } from '@x-gateway/interface';
+import { RequestNewCertRequestValidator, SetCertForWebClientRequestValidator, SetCertForWebClientRequest, RequestNewCertRequest } from '@x-gateway/interface';
 
 const router = new Router({ prefix: '/cert' });
 
@@ -30,6 +30,21 @@ router.post('/request-new-cert', async (ctx, next) => {
     createCert(body.name, body.domain, 'temp_user');
     const running = getRunningProcess();
     ctx.body = resFac(0, running, 'success');
+  } catch (e) {
+    ctx.status = 400;
+    ctx.body = resFac(1, {}, 'parameters error', e);
+  }
+
+  await next();
+});
+
+router.post('/set-cert-for-webclient', async (ctx, next) => {
+  const body = ctx.request.body as SetCertForWebClientRequest;
+  try {
+    await SetCertForWebClientRequestValidator.validateAsync(body);
+    await setCertForWebClient(body.name);
+    const certs = await getAllCerts();
+    ctx.body = resFac(0, certs, 'success');
   } catch (e) {
     ctx.status = 400;
     ctx.body = resFac(1, {}, 'parameters error', e);

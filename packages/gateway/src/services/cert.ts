@@ -5,6 +5,7 @@ import { httpServerPool } from "../utils/proxy-manager";
 import fs from 'fs-extra';
 import getDataSource from "../data-source";
 import { CertEntity } from "../entities/cert";
+import { setClientSecureContect } from "../main";
 
 export async function createCert(certName: string, domain: string, createdBy: string) {
 
@@ -29,6 +30,7 @@ export async function createCert(certName: string, domain: string, createdBy: st
   entity.createdBy = createdBy;
   entity.cert = cert;
   entity.key = privateKey;
+  entity.useForWebClient = 0;
   await certRepository.save(entity);
   return true;
 }
@@ -43,10 +45,26 @@ export async function getAllCerts() {
       createdBy: cert.createdBy,
       createdAt: cert.createdAt,
       domain: cert.domain,
+      useForWebClient: cert.useForWebClient,
     };
   });
 }
 
 export async function getRunningProcess() {
   return certManager.running;
+}
+
+export async function setCertForWebClient(name: string) {
+
+  const appDataSource = await getDataSource();
+  const certRepository = appDataSource.getRepository(CertEntity);
+  const entity = await certRepository.findOneBy({ name });
+  
+  if (entity) {
+    await certRepository.update({}, { useForWebClient: 0 });
+    entity.useForWebClient = 1;
+    await certRepository.save(entity);
+    setClientSecureContect(entity.key, entity.cert);
+  }
+
 }

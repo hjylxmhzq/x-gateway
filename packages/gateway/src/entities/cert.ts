@@ -20,4 +20,7 @@ export class CertEntity {
 
     @Column()
     createdBy: string;
+
+    @Column()
+    useForWebClient: number;
 }

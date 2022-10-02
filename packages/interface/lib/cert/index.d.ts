@@ -22,7 +22,13 @@ export interface DeployedCert {
     createdBy: string;
     createdAt: number;
     domain: string;
+    useForWebClient: number;
 }
 export interface GetAllDelployedCertRequest {
 }
 export declare type GetAllDelployedCertResponse = DeployedCert[];
+export interface SetCertForWebClientRequest {
+    name: string;
+}
+export declare type SetCertForWebClientResponse = DeployedCert[];
+export declare const SetCertForWebClientRequestValidator: Joi.ObjectSchema<SetCertForWebClientRequest>;

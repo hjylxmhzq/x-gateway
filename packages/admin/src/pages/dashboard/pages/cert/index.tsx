@@ -1,7 +1,7 @@
 import { Button, Descriptions, Form, Input, message, Modal, Space, Spin, Table, Tabs } from 'antd';
 import { DeployedCert, RunningCertInstance } from '@x-gateway/interface';
 import React, { useEffect, useState } from 'react';
-import { requestNewCert, getRunningCertProcess, getAllDeployedCerts } from '../../../../apis/cert-management';
+import { requestNewCert, getRunningCertProcess, getAllDeployedCerts, setCertForWebClient } from '../../../../apis/cert-management';
 
 const CertManagementPage: React.FC = () => {
 
@@ -114,12 +114,27 @@ const RunningCertTable: React.FC = () => {
       dataIndex: 'createdBy',
     },
     {
+      title: '用于Web Client',
+      dataIndex: 'useForWebClient',
+      render: (useForWebClient: number) => {
+        console.log(useForWebClient)
+        return <span>{useForWebClient ? '是' : '否'}</span>
+      },
+    },
+    {
       title: '操作',
       render: (_: any, record: DeployedCert) => {
-        return <Button onClick={() => {
-          setCurrentDetailName(record.name)
-          openModal();
-        }}>删除</Button>
+        return <Space>
+          <Button onClick={async () => {
+            await setCertForWebClient({ name: record.name });
+            await reloadDeployedDataSource();
+          }}>用于控制台</Button>
+          <Button
+            danger
+            onClick={() => {
+              openModal();
+            }}>删除</Button>
+        </Space>
       }
     },
   ];

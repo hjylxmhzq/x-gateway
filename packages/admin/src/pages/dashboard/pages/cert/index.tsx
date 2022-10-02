@@ -177,7 +177,7 @@ const RunningCertTable: React.FC = () => {
             <Descriptions.Item label="绑定域名">{currentDetail.domain}</Descriptions.Item>
             <Descriptions.Item label="创建时间">{new Date(currentDetail.createdAt).toLocaleString()}</Descriptions.Item>
             <Descriptions.Item label="创建用户">{currentDetail.createdBy}</Descriptions.Item>
-            <Descriptions.Item label={`日志(${currentDetail.status})`} style={{ whiteSpace: 'pre' }}>
+            <Descriptions.Item label={`日志(${currentDetail.status})`} style={{ whiteSpace: 'pre-wrap' }}>
               {currentDetail.status === 'running' ? <><Spin></Spin><br /></> : null}
               {currentDetail.log}
             </Descriptions.Item>

@@ -5,9 +5,11 @@ import style from './index.module.less';
 import './index.less';
 import classnames from 'classnames';
 import { addHttpProxy, deleteProxy, listProxies, startOrStopProxy } from '../../../../apis/proxy-config';
-import { ListProxyResponse } from '@x-gateway/interface';
+import { DeployedCert, ListProxyResponse } from '@x-gateway/interface';
 import { ProxyStatus } from '@x-gateway/interface/lib/setting/add-http-proxy';
 import prettyBytes from 'pretty-bytes';
+import { useForceUpdate } from '../../../../hooks/common';
+import { getAllDeployedCerts } from '../../../../apis/cert-management';
 
 const EditableContext = React.createContext<FormInstance<any> | null>(null);
 
@@ -293,12 +295,40 @@ const ProxyRunningSwitch = ({ name, defaultStatus }: { name: string, defaultStat
 const { Option } = Select;
 
 const AddProxyForm = (props: { form: FormInstance }) => {
+  const [count, forceUpdate] = useState(0);
+  const [certsDomains, setCertDomains] = useState<DeployedCert[]>([]);
+
+  const reloadCertDomain = async () => {
+    const delpoyedCerts = await getAllDeployedCerts();
+    setCertDomains(delpoyedCerts);
+  }
+
+  useEffect(() => {
+    reloadCertDomain();
+  }, [count]);
+
   return <Form
     form={props.form}
     name="basic"
     initialValues={{ remember: true }}
     autoComplete="off"
   >
+    <Form.Item
+      labelCol={{ span: 5 }}
+      label="协议类型"
+      name="proxyProtocol"
+      initialValue={'http'}
+      rules={[{ required: true, message: '请选择协议类型' }]}
+    >
+      <Select
+        placeholder="转发协议类型"
+        allowClear
+        onSelect={() => forceUpdate(count + 1)}
+      >
+        <Option value="http">HTTP</Option>
+        <Option value="https">HTTPS</Option>
+      </Select>
+    </Form.Item>
     <Form.Item
       labelCol={{ span: 5 }}
       label="规则名称"
@@ -310,10 +340,23 @@ const AddProxyForm = (props: { form: FormInstance }) => {
     <Form.Item
       labelCol={{ span: 5 }}
       label="主机(host)"
+      tooltip="使用HTTPS协议时需要先在SSL证书管理页面添加证书"
       name="host"
       rules={[{ required: true, message: '输入需要匹配的规则' }]}
     >
-      <Input placeholder='输入需要匹配的主机名(正则表达式)' />
+      {
+        props.form.getFieldValue('proxyProtocol') === 'https' ? <Select
+          placeholder="选择代理主机"
+          allowClear
+        >
+          {
+            certsDomains.map((cert) => {
+              return <Option value={cert.domain}>{cert.domain}</Option>
+            })
+          }
+        </Select>
+          : <Input placeholder='输入需要匹配的主机名(正则表达式)' />
+      }
     </Form.Item>
     <Form.Item
       labelCol={{ span: 5 }}
@@ -331,21 +374,6 @@ const AddProxyForm = (props: { form: FormInstance }) => {
       rules={[{ required: true, message: '请输入路径' }]}
     >
       <Input placeholder='输入需要匹配的路径(正则表达式)' />
-    </Form.Item>
-    <Form.Item
-      labelCol={{ span: 5 }}
-      label="协议类型"
-      name="proxyProtocol"
-      initialValue={'http'}
-      rules={[{ required: true, message: '请选择协议类型' }]}
-    >
-      <Select
-        placeholder="转发协议类型"
-        allowClear
-      >
-        <Option value="http">HTTP</Option>
-        <Option value="https">HTTPS</Option>
-      </Select>
     </Form.Item>
     <Form.Item
       labelCol={{ span: 5 }}

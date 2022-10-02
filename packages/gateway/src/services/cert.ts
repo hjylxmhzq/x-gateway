@@ -38,11 +38,17 @@ export async function createCert(domain: string) {
   }
 
   const { cert, privateKey, csr } = await createLetsencryptCert(domain, logger, onFinished);
-  const certFile = path.join(certFileDir, domain);
+  const certDomainDir = path.join(certFileDir, domain);
+  const certKeyFile = path.join(certDomainDir, 'key.pem');
+  const certFile = path.join(certDomainDir, 'cert.pem');
+  const csrFile = path.join(certDomainDir, 'csr.info');
+  await fs.ensureDir(certDomainDir);
   await fs.writeFile(certFile, cert.toString());
+  await fs.writeFile(certKeyFile, privateKey.toString());
+  await fs.writeFile(csrFile, csr.toString());
   return true;
 }
 
 export function getAllCerts() {
-  
+
 }

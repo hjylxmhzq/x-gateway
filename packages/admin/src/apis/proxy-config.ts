@@ -1,5 +1,8 @@
 import { post } from "./common";
-import { AddHttpProxyRequest, AddHttpProxyResponse, DeleteProxyResponse, ListProxyResponse, ProxyProtocol } from '@x-gateway/interface';
+import {
+  AddHttpProxyRequest, AddHttpProxyResponse, DeleteProxyResponse, ListProxyResponse, ProxyProtocol,
+  StartOrStopProxyResponse
+} from '@x-gateway/interface';
 
 export interface ProxyParamenter {
   name: string;
@@ -31,4 +34,8 @@ export const listProxies = async (page = 0, pageSize = 100) => {
 
 export const deleteProxy = async (name: string) => {
   return await post<DeleteProxyResponse>('/setting/delete-proxy', { name });
+}
+
+export const startOrStopProxy = async (name: string, status: 0 | 1) => {
+  return await post<StartOrStopProxyResponse>('/setting/start-or-stop-proxy', { name, status });
 }

@@ -5,8 +5,10 @@ export var ProxyProtocol;
 })(ProxyProtocol || (ProxyProtocol = {}));
 export var ProxyStatus;
 (function (ProxyStatus) {
-    ProxyStatus[ProxyStatus["stopped"] = 0] = "stopped";
-    ProxyStatus[ProxyStatus["running"] = 1] = "running";
+    ProxyStatus["running"] = "running";
+    ProxyStatus["starting"] = "starting";
+    ProxyStatus["stoppping"] = "stopping";
+    ProxyStatus["stopped"] = "stopped";
 })(ProxyStatus || (ProxyStatus = {}));
 export const AddHttpRequestValidator = Joi.object({
     name: Joi.string().min(1).max(30).required(),

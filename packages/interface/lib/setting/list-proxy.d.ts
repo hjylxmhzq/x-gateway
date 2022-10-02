@@ -10,5 +10,17 @@ export declare type ListProxyResponse = ({
     proxyPort: number;
     proxyProtocol: 'http';
     status: ProxyStatus;
+    traffic: {
+        sent: number;
+        received: number;
+    };
 })[];
 export declare const ListProxyRequestValidator: Joi.ObjectSchema<ListProxyRequest>;
+declare type RunningStatus = 0 | 1;
+export declare type StartOrStopProxyRequest = {
+    name: string;
+    status: RunningStatus;
+};
+export declare type StartOrStopProxyResponse = ListProxyResponse[0];
+export declare const StartOrStopProxyRequestValidator: Joi.ObjectSchema<StartOrStopProxyRequest>;
+export {};

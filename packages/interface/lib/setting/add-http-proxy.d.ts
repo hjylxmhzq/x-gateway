@@ -12,8 +12,10 @@ export declare enum ProxyProtocol {
     http = "http"
 }
 export declare enum ProxyStatus {
-    stopped = 0,
-    running = 1
+    running = "running",
+    starting = "starting",
+    stoppping = "stopping",
+    stopped = "stopped"
 }
 export interface AddHttpProxyResponse {
 }

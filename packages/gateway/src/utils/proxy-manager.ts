@@ -1,7 +1,8 @@
 import http from 'node:http';
 import internal from 'node:stream';
 import httpProxy from 'http-proxy';
-
+import { ProxyEntity } from '../entities/proxy';
+import getDataSource from '../data-source';
 
 export enum ProxyType {
   http = 'http',
@@ -19,20 +20,18 @@ class TunnelProxy {
 }
 
 interface HttpRequestProcessor {
-  (req: http.IncomingMessage, res: http.ServerResponse): void;
+  (req: http.IncomingMessage, res: http.ServerResponse): Promise<boolean> | boolean;
 }
 
 interface HttpConnectProcessor {
   (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer): void;
 }
 
-const httpServerMap = new Map<number, http.Server>();
-const serverProcessors = new Map<http.Server, Set<HttpProxy>>();
-var proxy = httpProxy.createProxyServer({});
+const proxy = httpProxy.createProxyServer({});
 
-class HttpProxy extends TunnelProxy {
-  server: http.Server;
+export class HttpProxy extends TunnelProxy {
   status: ProxyStatus = ProxyStatus.stopped;
+  traffic: { sent: number; received: number } = { sent: 0, received: 0 };
   isDestroyed = false;
   processor: HttpRequestProcessor;
   constructor(
@@ -45,52 +44,37 @@ class HttpProxy extends TunnelProxy {
     public authFn: (req: http.IncomingMessage) => Promise<boolean> | boolean = () => true
   ) {
     super(ProxyType.http);
-    const currentServer = httpServerMap.get(port)
-    if (currentServer) {
-      this.server = currentServer;
-    } else {
-      this.server = http.createServer();
-      httpServerMap.set(port, this.server);
-      this.server.listen(port);
-    }
-    const currentProxies = serverProcessors.get(this.server);
-    if (currentProxies) {
-      currentProxies.add(this);
-    } else {
-      serverProcessors.set(this.server, new Set([this]));
-    }
     const processor: HttpRequestProcessor = async (req, res) => {
       if (this.status !== ProxyStatus.running) {
-        res.statusCode = 404;
-        res.end('Not Found');
+        return false;
       }
       const reqPath = req.url;
       if (req.headers.host && reqPath) {
         const [hostname] = req.headers.host.split(':');
         if (!hostname || !host.test(hostname) || !path.test(reqPath)) {
-          res.statusCode = 404;
-          res.end('Not Found');
-          return;
+          return false;
         }
         const isAuthed = await authFn(req);
         if (isAuthed) {
           proxy.web(req, res, { target: `http://${targetHost}:${targetPort}` });
-        } else {
-          res.statusCode = 401;
-          res.end('Unauthorized');
+          req.on('data', (chunk) => {
+            this.traffic.sent += chunk.length;
+          });
+          proxy.on('proxyRes', (proxyRes) => {
+            proxyRes.on('data', (chunk) => {
+              this.traffic.received += chunk.length;
+            });
+          });
+          return true;
         }
+        return false;
       }
-      console.log(req.headers.host);
+      return false;
     }
-    this.addProcessor(processor)
+    httpServerPool.setHttpServerProcessor(port, processor);
+
     this.processor = processor;
     this.start();
-  }
-  addProcessor(processor: HttpRequestProcessor) {
-    this.server.on('request', processor);
-  }
-  removeProcessor(processor: HttpRequestProcessor) {
-    this.server.off('request', processor);
   }
   start() {
     if (this.isDestroyed) {
@@ -104,16 +88,7 @@ class HttpProxy extends TunnelProxy {
   }
   destroy() {
     this.isDestroyed = true;
-    this.removeProcessor(this.processor);
-    const processors = serverProcessors.get(this.server);
-    if (processors) {
-      processors.delete(this);
-      if (processors.size === 0) {
-        this.server.close();
-        this.server.unref();
-        httpServerMap.delete(this.port);
-      }
-    }
+    httpServerPool.deleteHttpProcessor(this.port, this.processor);
   }
   toJSON() {
     return {
@@ -124,19 +99,96 @@ class HttpProxy extends TunnelProxy {
   }
 }
 
+class HttpServerPool {
+  serverMap = new Map<number, http.Server>();
+  serverRequestProcessors = new WeakMap<http.Server, HttpRequestProcessor[]>();
+  constructor() {
+
+  }
+  getHttpServer(port: number) {
+    const server = this.serverMap.get(port);
+    if (server) {
+      return server;
+    }
+    const newServer = http.createServer();
+    this.serverMap.set(port, newServer);
+    newServer.listen(port);
+    return newServer;
+  }
+  deleteHttpProcessor(port: number, processor: HttpRequestProcessor) {
+    const server = this.getHttpServer(port);
+    const processorList = this.serverRequestProcessors.get(server);
+    const idx = processorList?.indexOf(processor);
+    if (idx && idx > -1) {
+      processorList?.splice(idx, 1);
+    }
+    if (processorList && processorList.length === 0) {
+      server.close();
+      this.serverRequestProcessors.delete(server);
+      this.serverMap.delete(port);
+    }
+  }
+  setHttpServerProcessor(port: number, processor: HttpRequestProcessor, firstOrder = false) {
+    const server = this.getHttpServer(port);
+    const processorList = this.serverRequestProcessors.get(server);
+    if (processorList) {
+      if (firstOrder) {
+        processorList.unshift(processor);
+      } else {
+        processorList.push(processor);
+      }
+      return;
+    }
+    const newProcessorList: HttpRequestProcessor[] = [processor];
+    this.serverRequestProcessors.set(server, newProcessorList);
+    server.on('request', async (req, res) => {
+      let isProcessed = false;
+      for (let processor of newProcessorList) {
+        isProcessed = await processor(req, res);
+        if (isProcessed) {
+          break;
+        }
+      }
+      if (!isProcessed) {
+        req.statusCode = 404;
+        res.end('Not Found');
+      }
+    });
+  }
+}
+
+export const httpServerPool = new HttpServerPool();
+
 class ProxyManager {
   httpProxies: HttpProxy[] = [];
   constructor() {
   }
-  addHttpProxy(name: string, port: number, host: RegExp, path: RegExp, targetHost: string, targetPort: number) {
+  async addHttpProxy(name: string, port: number, host: RegExp, path: RegExp, targetHost: string, targetPort: number) {
     if (this.httpProxies.find(p => p.name === name)) {
       return undefined;
     }
     const proxy = new HttpProxy(name, port, host, path, targetHost, targetPort);
     this.httpProxies.push(proxy);
+
+    const appDataSource = await getDataSource();
+    const proxyRepository = appDataSource.getRepository(ProxyEntity);
+    const entity = new ProxyEntity();
+    entity.name = name;
+    entity.host = host.source;
+    entity.port = port;
+    entity.type = 'http';
+    entity.path = path.source;
+    entity.targetHost = targetHost;
+    entity.targetPort = targetPort;
+    entity.status = 1;
+    proxyRepository.save(entity);
+
     return proxy;
   }
-  deleteProxy(name: string) {
+  async deleteProxy(name: string) {
+    const appDataSource = await getDataSource();
+    const proxyRepository = appDataSource.getRepository(ProxyEntity);
+    await proxyRepository.delete(name);
     const idx = this.httpProxies.findIndex(p => p.name === name)
     if (idx !== -1) {
       this.httpProxies[idx].destroy();
@@ -145,13 +197,61 @@ class ProxyManager {
     }
     return false;
   }
+  async stopProxy(name: string) {
+    const appDataSource = await getDataSource();
+    const proxyRepository = appDataSource.getRepository(ProxyEntity);
+    const proxies = this.listAllProxies();
+    const proxy = proxies.find(p => p.name === name);
+    if (proxy) {
+      proxy.stop();
+      const proxyEntity = await proxyRepository.findOneBy({ name });
+      if (proxyEntity) {
+        proxyEntity.status = 0;
+        await proxyRepository.save(proxyEntity);
+      }
+      return proxy;
+    }
+  }
+  async startProxy(name: string) {
+    const appDataSource = await getDataSource();
+    const proxyRepository = appDataSource.getRepository(ProxyEntity);
+    const proxies = this.listAllProxies();
+    const proxy = proxies.find(p => p.name === name);
+    if (proxy) {
+      proxy.start();
+      const proxyEntity = await proxyRepository.findOneBy({ name });
+      if (proxyEntity) {
+        proxyEntity.status = 1;
+        await proxyRepository.save(proxyEntity);
+      }
+      return proxy;
+    }
+  }
   listAllProxies() {
     const proxies = [...this.httpProxies];
     return proxies;
   }
+  async restoreProxiesFromDataBase() {
+    const appDataSource = await getDataSource();
+    const proxyRepository = appDataSource.getRepository(ProxyEntity);
+    const entities = await proxyRepository.find();
+    for (let entity of entities) {
+      if (entity.type === 'http') {
+        const { name, port, host, path, targetHost, targetPort, status } = entity;
+        const proxy = new HttpProxy(name, port, new RegExp(host), new RegExp(path), targetHost, targetPort);
+        this.httpProxies.push(proxy);
+        proxy.traffic.sent = entity.trafficSent;
+        proxy.traffic.received = entity.trafficReceived;
+        if (!status) {
+          proxy.stop();
+        }
+      }
+    }
+  }
 }
 
 const proxyManager = new ProxyManager();
+proxyManager.restoreProxiesFromDataBase();
 
 export {
   proxyManager,

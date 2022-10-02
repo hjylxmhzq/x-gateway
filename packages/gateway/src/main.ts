@@ -1,9 +1,11 @@
 import Koa from 'koa';
 import dotenv from 'dotenv';
-import { logger } from './utils/logger';
+import { logger, stringifyError } from './utils/logger';
 import registMiddlewares from './middlewares';
 import registRoutes from './routes';
 import cors from '@koa/cors';
+import './data-source';
+import { createCert } from './services/cert';
 
 const app = new Koa();
 
@@ -25,6 +27,13 @@ app.use((ctx, next) => {
   next();
 })
 
+process.on('uncaughtException', function (err) {
+  console.error(err);
+  logger.error('Uncaught Exception: ' + stringifyError(err));
+});
+
 app.listen(WEB_CLIENT_PORT, parseInt(WEB_CLIENT_HOST, 10));
 
 logger.info(`web client server is listening on ${WEB_CLIENT_HOST}:${WEB_CLIENT_PORT}`);
+
+createCert('anylib.cc');

@@ -1,11 +1,13 @@
-import { Button, Form, Input, Popconfirm, Table, InputRef, message, Modal, InputNumber, Select, Spin, Alert } from 'antd';
+import { Button, Form, Input, Popconfirm, Table, InputRef, message, Modal, InputNumber, Select, Spin, Switch, Space } from 'antd';
 import type { FormInstance } from 'antd/es/form';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import style from './index.module.less';
 import './index.less';
 import classnames from 'classnames';
-import { addHttpProxy, deleteProxy, listProxies } from '../../../../apis/proxy-config';
-import { ListProxyResponse } from '@x-gateway/interface/lib';
+import { addHttpProxy, deleteProxy, listProxies, startOrStopProxy } from '../../../../apis/proxy-config';
+import { ListProxyResponse } from '@x-gateway/interface';
+import { ProxyStatus } from '@x-gateway/interface/lib/setting/add-http-proxy';
+import prettyBytes from 'pretty-bytes';
 
 const EditableContext = React.createContext<FormInstance<any> | null>(null);
 
@@ -132,7 +134,7 @@ const RoutesTable: React.FC = () => {
     {
       title: '规则名称',
       dataIndex: 'name',
-      width: '30%',
+      width: 150,
       editable: true,
     },
     {
@@ -160,21 +162,35 @@ const RoutesTable: React.FC = () => {
       dataIndex: 'targetPort',
     },
     {
-      title: 'operation',
+      title: '流量(发送/返回)',
+      width: 150,
+      dataIndex: 'traffic',
+      render(item) {
+        console.log(item);
+        return <span>{`${prettyBytes(item.sent)}/${prettyBytes(item.received)}`}</span>
+      }
+    },
+    {
+      title: '操作',
       dataIndex: 'operation',
-      render: (_, record: any) =>
-        dataSource.length >= 1 ? (
-          <Popconfirm okText="确定" cancelText="取消" title="确认删除吗?" onConfirm={async () => {
-            setLoading(true);
-            console.log(record.name);
-            await deleteProxy(record.name);
-            await reloadDataSource();
-            setLoading(false);
-            message.info(`已删除代理规则: ${record.name}`);
-          }}>
-            <Button size="small" type="primary" danger>删除</Button>
-          </Popconfirm>
-        ) : null,
+      render: (_, record: any) => {
+        console.log(record, ProxyStatus.running)
+        return dataSource.length >= 1 ? (
+          <Space>
+            <ProxyRunningSwitch name={record.name} defaultStatus={record.status} />
+            <Popconfirm okText="确定" cancelText="取消" title="确认删除吗?" onConfirm={async () => {
+              setLoading(true);
+              console.log(record.name);
+              await deleteProxy(record.name);
+              await reloadDataSource();
+              setLoading(false);
+              message.info(`已删除代理规则: ${record.name}`);
+            }}>
+              <Button size="small" type="primary" danger>删除</Button>
+            </Popconfirm>
+          </Space>
+        ) : null
+      },
     },
   ];
 
@@ -250,6 +266,30 @@ const RoutesTable: React.FC = () => {
   );
 };
 
+const ProxyRunningSwitch = ({ name, defaultStatus }: { name: string, defaultStatus: ProxyStatus }) => {
+  const [status, setStatus] = useState(defaultStatus === ProxyStatus.running ? 1 : 0);
+  const [loading, setLoading] = useState(false);
+
+  async function setProxyStatus(checked: boolean) {
+    setLoading(true);
+    const proxy = await startOrStopProxy(name, checked ? 1 : 0);
+    if (proxy.status === ProxyStatus.running) {
+      setStatus(1);
+    } else {
+      setStatus(0);
+    }
+    setLoading(false);
+  }
+
+  return <Switch
+    loading={loading}
+    onChange={setProxyStatus}
+    checkedChildren="on"
+    unCheckedChildren="off"
+    checked={!!status}
+  />
+};
+
 const { Option } = Select;
 
 const AddProxyForm = (props: { form: FormInstance }) => {
@@ -287,14 +327,16 @@ const AddProxyForm = (props: { form: FormInstance }) => {
       labelCol={{ span: 5 }}
       label="路径(path)"
       name="path"
+      initialValue={'.*'}
       rules={[{ required: true, message: '请输入路径' }]}
     >
-      <Input />
+      <Input placeholder='输入需要匹配的路径(正则表达式)' />
     </Form.Item>
     <Form.Item
       labelCol={{ span: 5 }}
       label="协议类型"
       name="proxyProtocol"
+      initialValue={'http'}
       rules={[{ required: true, message: '请选择协议类型' }]}
     >
       <Select
@@ -309,6 +351,7 @@ const AddProxyForm = (props: { form: FormInstance }) => {
       labelCol={{ span: 5 }}
       label="目标主机"
       name="proxyHost"
+      initialValue={'127.0.0.1'}
       rules={[{ required: true, message: '请输入目标主机' }]}
     >
       <Input placeholder='目标主机(ip或域名)' />

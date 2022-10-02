@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse } from "http";
 import path from "path";
-import { challengeDir, createLetsencryptCert } from "../utils/cert";
+import { certFileDir, challengeDir, createLetsencryptCert } from "../utils/cert";
 import { httpServerPool } from "../utils/proxy-manager";
 import fs from 'fs-extra';
 
@@ -26,17 +26,23 @@ export async function createCert(domain: string) {
   }
 
   httpServerPool.setHttpServerProcessor(80, processor, true);
-  
+
   let log = '';
   const logger = (msg: string) => {
     console.log(msg);
     log = log + msg + '\n';
   }
 
-  const onFinished = () => {
+  const onFinished = async () => {
     httpServerPool.deleteHttpProcessor(80, processor);
   }
 
-  await createLetsencryptCert(domain, logger, onFinished);
+  const { cert, privateKey, csr } = await createLetsencryptCert(domain, logger, onFinished);
+  const certFile = path.join(certFileDir, domain);
+  await fs.writeFile(certFile, cert.toString());
+  return true;
+}
 
+export function getAllCerts() {
+  
 }

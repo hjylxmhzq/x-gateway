@@ -160,6 +160,7 @@ class CertManager {
       instance.key = privateKey.toString();
       instance.cert = cert.toString();
       instance.csr = csr.toString();
+      instance.status = 'success';
       await onSuccess(instance);
     } catch (e) {
       instance.status = 'fail';

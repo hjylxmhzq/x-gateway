@@ -5,7 +5,6 @@ import registMiddlewares from './middlewares';
 import registRoutes from './routes';
 import cors from '@koa/cors';
 import './data-source';
-import { createCert } from './services/cert';
 
 const app = new Koa();
 
@@ -35,5 +34,3 @@ process.on('uncaughtException', function (err) {
 app.listen(WEB_CLIENT_PORT, parseInt(WEB_CLIENT_HOST, 10));
 
 logger.info(`web client server is listening on ${WEB_CLIENT_HOST}:${WEB_CLIENT_PORT}`);
-
-createCert('anylib.cc');

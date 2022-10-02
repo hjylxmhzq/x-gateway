@@ -1,4 +1,5 @@
 import http from 'node:http';
+import https from 'node:https';
 import internal from 'node:stream';
 import httpProxy from 'http-proxy';
 import { ProxyEntity } from '../entities/proxy';
@@ -105,18 +106,23 @@ class HttpServerPool {
   constructor() {
 
   }
-  getHttpServer(port: number) {
+  getHttpServer(port: number, type: 'http' | 'https' = 'http', cert?: Buffer | string, key?: Buffer | string): http.Server | https.Server {
     const server = this.serverMap.get(port);
     if (server) {
       return server;
     }
-    const newServer = http.createServer();
+    let newServer;
+    if (type === 'http') {
+      newServer = http.createServer();
+    } else {
+      newServer = https.createServer({ key, cert });
+    }
     this.serverMap.set(port, newServer);
     newServer.listen(port);
     return newServer;
   }
   deleteHttpProcessor(port: number, processor: HttpRequestProcessor) {
-    const server = this.getHttpServer(port);
+    const server = this.getHttpServer(port, 'http');
     const processorList = this.serverRequestProcessors.get(server);
     const idx = processorList?.indexOf(processor);
     if (idx && idx > -1) {

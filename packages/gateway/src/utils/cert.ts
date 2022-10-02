@@ -1,7 +1,9 @@
 import acme from 'acme-client';
-import { join, dirname } from 'path';
+import path, { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs-extra';
+import { httpServerPool } from './proxy-manager';
+import { IncomingMessage, ServerResponse } from 'http';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const certRootDir = join(__dirname, '../../cert');
@@ -98,3 +100,64 @@ export async function createLetsencryptCert(domain: string, logger: (msg: string
 
   return { csr, privateKey: key, cert };
 }
+
+interface RunningCertInstance {
+  log: string;
+  domain: string;
+  createdBy: string;
+  createdAt: number;
+  status: 'running' | 'fail' | 'success',
+  cert?: string;
+  key?: string;
+  csr?: string
+}
+
+class CertManager {
+  running: RunningCertInstance[] = [];
+  async addCert(domain: string, createdBy: string) {
+    const instance: RunningCertInstance = {
+      log: 'start request certification...\n',
+      domain,
+      createdBy,
+      createdAt: Date.now(),
+      status: 'running',
+    }
+
+    const processor = async (req: IncomingMessage, res: ServerResponse) => {
+
+      if (!req.url) {
+        return false;
+      }
+      const urlObj = new URL(req.url, `http://${req.headers.host}`);
+      if (!urlObj.pathname.includes('acme-challenge')) {
+        return false;
+      }
+      const token = urlObj.pathname.split('/').pop();
+      if (!token) {
+        return false;
+      }
+      const challengeFile = path.join(challengeDir, token);
+      const fileContent = await fs.readFile(challengeFile);
+      res.end(fileContent);
+      return true;
+    }
+
+    httpServerPool.setHttpServerProcessor(80, processor, true);
+
+    let log = '';
+    const logger = (msg: string) => {
+      instance.log = instance.log + msg + '\n';
+    }
+
+    const onFinished = async () => {
+      httpServerPool.deleteHttpProcessor(80, processor);
+    }
+    const { cert, privateKey, csr } = await createLetsencryptCert(domain, logger, onFinished);
+    instance.key = privateKey.toString();
+    instance.cert = cert.toString();
+    instance.csr = csr.toString();
+    return instance;
+  }
+}
+
+export const certManager = new CertManager();

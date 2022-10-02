@@ -1,54 +1,52 @@
 import { IncomingMessage, ServerResponse } from "http";
 import path from "path";
-import { certFileDir, challengeDir, createLetsencryptCert } from "../utils/cert";
+import { certFileDir, certManager, challengeDir, createLetsencryptCert } from "../utils/cert";
 import { httpServerPool } from "../utils/proxy-manager";
 import fs from 'fs-extra';
+import getDataSource from "../data-source";
+import { CertEntity } from "../entities/cert";
 
-export async function createCert(domain: string) {
+export async function createCert(certName: string, createdBy: string, domain: string) {
 
-  const processor = async (req: IncomingMessage, res: ServerResponse) => {
-
-    if (!req.url) {
-      return false;
-    }
-    const urlObj = new URL(req.url, `http://${req.headers.host}`);
-    if (!urlObj.pathname.includes('acme-challenge')) {
-      return false;
-    }
-    const token = urlObj.pathname.split('/').pop();
-    if (!token) {
-      return false;
-    }
-    const challengeFile = path.join(challengeDir, token);
-    const fileContent = await fs.readFile(challengeFile);
-    res.end(fileContent);
-    return true;
+  const { cert, key: privateKey, csr } = await certManager.addCert(domain, createdBy);
+  if (!cert || !privateKey || !csr) {
+    return false;
   }
-
-  httpServerPool.setHttpServerProcessor(80, processor, true);
-
-  let log = '';
-  const logger = (msg: string) => {
-    console.log(msg);
-    log = log + msg + '\n';
-  }
-
-  const onFinished = async () => {
-    httpServerPool.deleteHttpProcessor(80, processor);
-  }
-
-  const { cert, privateKey, csr } = await createLetsencryptCert(domain, logger, onFinished);
   const certDomainDir = path.join(certFileDir, domain);
   const certKeyFile = path.join(certDomainDir, 'key.pem');
   const certFile = path.join(certDomainDir, 'cert.pem');
   const csrFile = path.join(certDomainDir, 'csr.info');
   await fs.ensureDir(certDomainDir);
-  await fs.writeFile(certFile, cert.toString(), { flag: 'w' });
-  await fs.writeFile(certKeyFile, privateKey.toString(), { flag: 'w' });
-  await fs.writeFile(csrFile, csr.toString(), { flag: 'w' });
+  await fs.writeFile(certFile, cert, { flag: 'w' });
+  await fs.writeFile(certKeyFile, privateKey, { flag: 'w' });
+  await fs.writeFile(csrFile, csr, { flag: 'w' });
+  const appDataSource = await getDataSource();
+  const certRepository = appDataSource.getRepository(CertEntity);
+  const entity = new CertEntity();
+  entity.name = certName;
+  entity.domain = domain;
+  entity.createdAt = Date.now();
+  entity.createdBy = createdBy;
+  entity.cert = cert;
+  entity.key = privateKey;
+  await certRepository.save(entity);
   return true;
 }
 
-export function getAllCerts() {
+export async function getAllCerts() {
+  const appDataSource = await getDataSource();
+  const certRepository = appDataSource.getRepository(CertEntity);
+  const certs = await certRepository.find();
+  return certs.map(cert => {
+    return {
+      name: cert.name,
+      createdBy: cert.createdBy,
+      createdAt: cert.createdAt,
+      domain: cert.domain,
+    };
+  });
+}
 
+export async function getRunningProcess() {
+  return certManager.running;
 }

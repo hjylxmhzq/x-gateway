@@ -6,7 +6,7 @@ import fs from 'fs-extra';
 import getDataSource from "../data-source";
 import { CertEntity } from "../entities/cert";
 
-export async function createCert(certName: string, createdBy: string, domain: string) {
+export async function createCert(certName: string, domain: string, createdBy: string) {
 
   const { cert, key: privateKey, csr } = await certManager.addCert(certName, domain, createdBy);
   if (!cert || !privateKey || !csr) {

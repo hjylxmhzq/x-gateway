@@ -43,9 +43,9 @@ export async function createCert(domain: string) {
   const certFile = path.join(certDomainDir, 'cert.pem');
   const csrFile = path.join(certDomainDir, 'csr.info');
   await fs.ensureDir(certDomainDir);
-  await fs.writeFile(certFile, cert.toString());
-  await fs.writeFile(certKeyFile, privateKey.toString());
-  await fs.writeFile(csrFile, csr.toString());
+  await fs.writeFile(certFile, cert.toString(), { flag: 'w' });
+  await fs.writeFile(certKeyFile, privateKey.toString(), { flag: 'w' });
+  await fs.writeFile(csrFile, csr.toString(), { flag: 'w' });
   return true;
 }
 

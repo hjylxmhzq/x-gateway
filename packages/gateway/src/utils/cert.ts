@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs-extra';
 import { httpServerPool } from './proxy-manager';
 import { IncomingMessage, ServerResponse } from 'http';
+import { logger, stringifyError } from './logger';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const certRootDir = join(__dirname, '../../cert');
@@ -102,6 +103,7 @@ export async function createLetsencryptCert(domain: string, logger: (msg: string
 }
 
 interface RunningCertInstance {
+  name: string;
   log: string;
   domain: string;
   createdBy: string;
@@ -114,14 +116,16 @@ interface RunningCertInstance {
 
 class CertManager {
   running: RunningCertInstance[] = [];
-  async addCert(domain: string, createdBy: string) {
+  async addCert(name: string, domain: string, createdBy: string, onSuccess = async (instance: RunningCertInstance) => undefined) {
     const instance: RunningCertInstance = {
+      name,
       log: 'start request certification...\n',
       domain,
       createdBy,
       createdAt: Date.now(),
       status: 'running',
     }
+    this.running.push(instance);
 
     const processor = async (req: IncomingMessage, res: ServerResponse) => {
 
@@ -144,18 +148,24 @@ class CertManager {
 
     httpServerPool.setHttpServerProcessor(80, processor, true);
 
-    let log = '';
-    const logger = (msg: string) => {
+    const certLogger = (msg: string) => {
       instance.log = instance.log + msg + '\n';
     }
 
     const onFinished = async () => {
       httpServerPool.deleteHttpProcessor(80, processor);
     }
-    const { cert, privateKey, csr } = await createLetsencryptCert(domain, logger, onFinished);
-    instance.key = privateKey.toString();
-    instance.cert = cert.toString();
-    instance.csr = csr.toString();
+    try {
+      const { cert, privateKey, csr } = await createLetsencryptCert(domain, certLogger, onFinished);
+      instance.key = privateKey.toString();
+      instance.cert = cert.toString();
+      instance.csr = csr.toString();
+      await onSuccess(instance);
+    } catch (e) {
+      instance.status = 'fail';
+      instance.log += stringifyError(e) + '\n';
+      logger.error(stringifyError(e));
+    }
     return instance;
   }
 }

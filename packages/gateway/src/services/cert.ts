@@ -8,7 +8,7 @@ import { CertEntity } from "../entities/cert";
 
 export async function createCert(certName: string, createdBy: string, domain: string) {
 
-  const { cert, key: privateKey, csr } = await certManager.addCert(domain, createdBy);
+  const { cert, key: privateKey, csr } = await certManager.addCert(certName, domain, createdBy);
   if (!cert || !privateKey || !csr) {
     return false;
   }

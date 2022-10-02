@@ -50,3 +50,13 @@ export type SetCertForWebClientResponse = DeployedCert[];
 export const SetCertForWebClientRequestValidator = Joi.object<SetCertForWebClientRequest>({
   name: Joi.string().min(1).max(200).required(),
 });
+
+export interface RecreateCertRequest {
+  name: string;
+};
+
+export interface RecreateCertResponse {};
+
+export const RecreateCertRequestValidator = Joi.object<RecreateCertRequest>({
+  name: Joi.string().min(1).max(200).required(),
+});

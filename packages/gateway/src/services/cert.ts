@@ -35,6 +35,31 @@ export async function createCert(certName: string, domain: string, createdBy: st
   return true;
 }
 
+export async function reCreateCert(name: string) {
+  const appDataSource = await getDataSource();
+  const certRepository = appDataSource.getRepository(CertEntity);
+  const entity = await certRepository.findOneBy({ name });
+  if (!entity) {
+    throw new Error(`no cert with name ${name}`);
+  }
+  const { cert, key: privateKey, csr } = await certManager.addCert(entity.name, entity.domain, entity.createdBy);
+  if (!cert || !privateKey || !csr) {
+    return false;
+  }
+  const certDomainDir = path.join(certFileDir, entity.domain);
+  const certKeyFile = path.join(certDomainDir, 'key.pem');
+  const certFile = path.join(certDomainDir, 'cert.pem');
+  const csrFile = path.join(certDomainDir, 'csr.info');
+  await fs.ensureDir(certDomainDir);
+  await fs.writeFile(certFile, cert, { flag: 'w' });
+  await fs.writeFile(certKeyFile, privateKey, { flag: 'w' });
+  await fs.writeFile(csrFile, csr, { flag: 'w' });
+  entity.cert = cert;
+  entity.key = privateKey;
+  await certRepository.save(entity);
+  return true;
+}
+
 export async function getAllCerts() {
   const appDataSource = await getDataSource();
   const certRepository = appDataSource.getRepository(CertEntity);
@@ -59,7 +84,7 @@ export async function setCertForWebClient(name: string) {
   const appDataSource = await getDataSource();
   const certRepository = appDataSource.getRepository(CertEntity);
   const entity = await certRepository.findOneBy({ name });
-  
+
   if (entity) {
     await certRepository.update({}, { useForWebClient: 0 });
     entity.useForWebClient = 1;

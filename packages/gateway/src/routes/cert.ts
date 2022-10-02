@@ -38,6 +38,21 @@ router.post('/request-new-cert', async (ctx, next) => {
   await next();
 });
 
+router.post('/recreate-cert', async (ctx, next) => {
+  const body = ctx.request.body as RequestNewCertRequest;
+  try {
+    await RequestNewCertRequestValidator.validateAsync(body);
+    createCert(body.name, body.domain, 'temp_user');
+    const running = getRunningProcess();
+    ctx.body = resFac(0, running, 'success');
+  } catch (e) {
+    ctx.status = 400;
+    ctx.body = resFac(1, {}, 'parameters error', e);
+  }
+
+  await next();
+});
+
 router.post('/set-cert-for-webclient', async (ctx, next) => {
   const body = ctx.request.body as SetCertForWebClientRequest;
   try {

@@ -113,7 +113,6 @@ const RunningCertTable: React.FC = () => {
           try {
             await form.validateFields();
             const values = form.getFieldsValue();
-            values.isAdmin = values.isAdmin === 'true' ? true : false;
             await register(values);
             reloadDataSource();
           } catch (e) {
@@ -164,12 +163,12 @@ const AddUserForm = (props: { form: FormInstance }) => {
       labelCol={{ span: 5 }}
       label="是否管理员"
       name="isAdmin"
-      initialValue={"false"}
+      initialValue={false}
       rules={[{ message: '请选择用户类型', required: true }]}
     >
       <Select>
-        <Select.Option value="true">是</Select.Option>
-        <Select.Option value="false">否</Select.Option>
+        <Select.Option value={true}>是</Select.Option>
+        <Select.Option value={false}>否</Select.Option>
       </Select>
     </Form.Item>
   </Form>

@@ -8,6 +8,7 @@ export interface AddHttpProxyRequest {
     proxyPort: number;
     proxyProtocol: ProxyProtocol;
     certName: string;
+    needAuth: boolean;
 }
 export declare enum ProxyProtocol {
     http = "http"

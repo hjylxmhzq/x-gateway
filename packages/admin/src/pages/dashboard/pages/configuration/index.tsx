@@ -135,7 +135,7 @@ const RoutesTable: React.FC = () => {
     {
       title: '规则名称',
       dataIndex: 'name',
-      width: 150,
+      width: 120,
       editable: true,
       sorter(a: any, b: any) { return a.name === b.name ? 0 : a.name < b.name ? -1 : 1 },
     },
@@ -156,6 +156,7 @@ const RoutesTable: React.FC = () => {
     {
       title: '协议类型(protocol)',
       dataIndex: 'type',
+      width: 100,
       filters: [
         {
           text: 'HTTP',
@@ -188,6 +189,15 @@ const RoutesTable: React.FC = () => {
       render(item) {
         console.log(item);
         return <span>{`${prettyBytes(item.sent)}/${prettyBytes(item.received)}`}</span>
+      }
+    },
+    {
+      title: '需要授权',
+      dataIndex: 'needAuth',
+      sorter(a: any, b: any) { return Number(a.needAuth) - Number(b.needAuth) },
+      render(item) {
+        console.log(item);
+        return <span>{`${item ? '是' : '否'}`}</span>
       }
     },
     {
@@ -417,6 +427,20 @@ const AddProxyForm = (props: { form: FormInstance }) => {
       rules={[{ type: 'number', max: 65535, min: 0, required: true, message: '端口范围为[0, 65535]' }]}
     >
       <InputNumber style={{ width: 200 }} placeholder='代理端口' min={0} max={65535} autoComplete={'false'} />
+    </Form.Item>
+    <Form.Item
+      labelCol={{ span: 5 }}
+      label="需要登录"
+      name="needAuth"
+      initialValue={false}
+      rules={[{ required: true, message: '请选择' }]}
+    >
+      <Select
+        placeholder="是否需要登录授权"
+      >
+        <Option value={true}>是</Option>
+        <Option value={false}>否</Option>
+      </Select>
     </Form.Item>
   </Form>
 }

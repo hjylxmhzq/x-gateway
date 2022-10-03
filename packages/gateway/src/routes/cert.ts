@@ -1,7 +1,7 @@
 import Router from '@koa/router';
-import { createCert, getAllCerts, getRunningProcess, setCertForWebClient } from '../services/cert';
+import { createCert, deleteCert, getAllCerts, getRunningProcess, reCreateCert, setCertForWebClient } from '../services/cert';
 import { resFac } from '../utils/response';
-import { RequestNewCertRequestValidator, SetCertForWebClientRequestValidator, SetCertForWebClientRequest, RequestNewCertRequest } from '@x-gateway/interface';
+import { RecreateCertRequest, RecreateCertRequestValidator, RequestNewCertRequestValidator, SetCertForWebClientRequestValidator, SetCertForWebClientRequest, RequestNewCertRequest, DeleteCertRequest, DeleteCertRequestValidator } from '@x-gateway/interface';
 
 const router = new Router({ prefix: '/cert' });
 
@@ -27,7 +27,7 @@ router.post('/request-new-cert', async (ctx, next) => {
   const body = ctx.request.body as RequestNewCertRequest;
   try {
     await RequestNewCertRequestValidator.validateAsync(body);
-    createCert(body.name, body.domain, 'temp_user');
+    createCert(body.name, body.domain, ctx.session.username);
     const running = getRunningProcess();
     ctx.body = resFac(0, running, 'success');
   } catch (e) {
@@ -39,12 +39,30 @@ router.post('/request-new-cert', async (ctx, next) => {
 });
 
 router.post('/recreate-cert', async (ctx, next) => {
-  const body = ctx.request.body as RequestNewCertRequest;
+  const body = ctx.request.body as RecreateCertRequest;
   try {
-    await RequestNewCertRequestValidator.validateAsync(body);
-    createCert(body.name, body.domain, 'temp_user');
+    await RecreateCertRequestValidator.validateAsync(body);
+    reCreateCert(body.name, ctx.session.username);
     const running = getRunningProcess();
     ctx.body = resFac(0, running, 'success');
+  } catch (e) {
+    ctx.status = 400;
+    ctx.body = resFac(1, {}, 'parameters error', e);
+  }
+
+  await next();
+});
+
+router.post('/delete-cert', async (ctx, next) => {
+  const body = ctx.request.body as DeleteCertRequest;
+  try {
+    await DeleteCertRequestValidator.validateAsync(body);
+    const success = await deleteCert(body.name);
+    if (success) {
+      ctx.body = resFac(0, {}, 'success');
+    } else {
+      ctx.body = resFac(1, {}, 'delete certification error');
+    }
   } catch (e) {
     ctx.status = 400;
     ctx.body = resFac(1, {}, 'parameters error', e);

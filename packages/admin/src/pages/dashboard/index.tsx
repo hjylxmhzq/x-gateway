@@ -4,13 +4,15 @@ import {
   LinkOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
-import { Menu } from 'antd';
+import { Button, Divider, Menu, Popover } from 'antd';
 import style from './index.module.less';
 import type { MenuProps } from 'antd/es/menu';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { UserOutlined } from '@ant-design/icons';
 import { Avatar } from 'antd';
+import { GetUserInfoResponse } from '@x-gateway/interface/lib';
+import { getUserInfo, logout } from '../../apis/user';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -36,7 +38,26 @@ const items: MenuItem[] = [
   getItem(<Link to={'/log'}>日志</Link>, 'log', <CalendarOutlined />),
 ];
 
+
 const Dashboard: React.FC = () => {
+
+  const [userInfo, setUserInfo] = useState<GetUserInfoResponse>({ name: '', email: '' });
+  const userInfoPopover = <div className={style['user-info-popover']}>
+    <div>已登陆账户：<strong>{userInfo.name}</strong></div>
+    <div>{userInfo.email}</div>
+    <Divider></Divider>
+    <Button style={{width: '100%'}} onClick={async () => {
+      await logout();
+      window.location.href = '/login';
+    }}>退出登陆</Button>
+  </div>
+
+  useEffect(() => {
+    (async () => {
+      const userInfo = await getUserInfo();
+      setUserInfo(userInfo);
+    })()
+  }, []);
 
   const location = useLocation();
   return (
@@ -54,7 +75,9 @@ const Dashboard: React.FC = () => {
         <div className={style['header']}>
           <div></div>
           <div>
-            <Avatar style={{ backgroundColor: '#87d068' }} icon={<UserOutlined />} />
+            <Popover arrowPointAtCenter placement="bottomRight" content={userInfoPopover} title="">
+              <Avatar style={{ backgroundColor: '#87d068' }} icon={<UserOutlined />} />
+            </Popover>
           </div>
         </div>
         <Outlet />

@@ -6,3 +6,13 @@ export const RequestNewCertRequestValidator = Joi.object({
 export const SetCertForWebClientRequestValidator = Joi.object({
     name: Joi.string().min(1).max(200).required(),
 });
+;
+;
+export const RecreateCertRequestValidator = Joi.object({
+    name: Joi.string().min(1).max(200).required(),
+});
+;
+;
+export const DeleteCertRequestValidator = Joi.object({
+    name: Joi.string().min(1).max(200).required(),
+});

@@ -32,3 +32,15 @@ export interface SetCertForWebClientRequest {
 }
 export declare type SetCertForWebClientResponse = DeployedCert[];
 export declare const SetCertForWebClientRequestValidator: Joi.ObjectSchema<SetCertForWebClientRequest>;
+export interface RecreateCertRequest {
+    name: string;
+}
+export interface RecreateCertResponse {
+}
+export declare const RecreateCertRequestValidator: Joi.ObjectSchema<RecreateCertRequest>;
+export interface DeleteCertRequest {
+    name: string;
+}
+export interface DeleteCertResponse {
+}
+export declare const DeleteCertRequestValidator: Joi.ObjectSchema<DeleteCertRequest>;

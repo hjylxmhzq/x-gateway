@@ -1,7 +1,7 @@
-import { Button, Descriptions, Form, Input, message, Modal, Space, Spin, Table, Tabs } from 'antd';
+import { Button, Descriptions, Form, Input, message, Modal, Popconfirm, Space, Spin, Table, Tabs } from 'antd';
 import { DeployedCert, RunningCertInstance } from '@x-gateway/interface';
 import React, { useEffect, useState } from 'react';
-import { requestNewCert, getRunningCertProcess, getAllDeployedCerts, setCertForWebClient } from '../../../../apis/cert-management';
+import { requestNewCert, getRunningCertProcess, getAllDeployedCerts, setCertForWebClient, recreateCert, deleteCert } from '../../../../apis/cert-management';
 
 const CertManagementPage: React.FC = () => {
 
@@ -34,7 +34,9 @@ const RunningCertTable: React.FC = () => {
   }
 
   const reloadDeployedDataSource = async (showLoading = false) => {
-    setLoading(true);
+    if (showLoading) {
+      setLoading(true);
+    }
     const data = await getAllDeployedCerts();
     setDeployedDataSource(data);
     setLoading(false);
@@ -98,7 +100,6 @@ const RunningCertTable: React.FC = () => {
     {
       title: '证书名称',
       dataIndex: 'name',
-      width: '250px',
     },
     {
       title: '域名',
@@ -123,17 +124,24 @@ const RunningCertTable: React.FC = () => {
     },
     {
       title: '操作',
+      width: '200px',
       render: (_: any, record: DeployedCert) => {
         return <Space>
-          <Button onClick={async () => {
+          <Button size='small' onClick={async () => {
             await setCertForWebClient({ name: record.name });
             await reloadDeployedDataSource();
           }}>用于控制台</Button>
-          <Button
-            danger
-            onClick={() => {
-              openModal();
-            }}>删除</Button>
+          <Button size='small' onClick={async () => {
+            await recreateCert({ name: record.name });
+            setCurrentTab('running');
+          }}>重新生成</Button>
+          <Popconfirm okText="确定" cancelText="取消" title="确认删除吗?" onConfirm={async () => {
+            await deleteCert({ name: record.name });
+            await reloadDeployedDataSource(true);
+            message.info(`已删除证书: ${record.name}`);
+          }}>
+            <Button size='small' type="primary" danger>删除</Button>
+          </Popconfirm>
         </Space>
       }
     },

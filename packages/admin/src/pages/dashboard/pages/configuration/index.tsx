@@ -8,7 +8,6 @@ import { addHttpProxy, deleteProxy, listProxies, startOrStopProxy } from '../../
 import { DeployedCert, ListProxyResponse } from '@x-gateway/interface';
 import { ProxyStatus } from '@x-gateway/interface/lib/setting/add-http-proxy';
 import prettyBytes from 'pretty-bytes';
-import { useForceUpdate } from '../../../../hooks/common';
 import { getAllDeployedCerts } from '../../../../apis/cert-management';
 
 const EditableContext = React.createContext<FormInstance<any> | null>(null);
@@ -138,14 +137,17 @@ const RoutesTable: React.FC = () => {
       dataIndex: 'name',
       width: 150,
       editable: true,
+      sorter(a: any, b: any) { return a.name === b.name ? 0 : a.name < b.name ? -1 : 1 },
     },
     {
       title: '主机(host)',
       dataIndex: 'host',
+      sorter(a: any, b: any) { return a.host === b.host ? 0 : a.host < b.host ? -1 : 1 },
     },
     {
       title: '端口(port)',
       dataIndex: 'port',
+      sorter(a: any, b: any) { return a.port - b.port },
     },
     {
       title: '路径(path)',
@@ -154,19 +156,35 @@ const RoutesTable: React.FC = () => {
     {
       title: '协议类型(protocol)',
       dataIndex: 'type',
+      filters: [
+        {
+          text: 'HTTP',
+          value: 'http',
+        },
+        {
+          text: 'HTTPS',
+          value: 'https',
+        },
+      ],
+      onFilter(value, record: any) {
+        return value === record.type;
+      }
     },
     {
       title: '目标主机',
       dataIndex: 'targetHost',
+      sorter(a: any, b: any) { return a.targetHost === b.targetHost ? 0 : a.targetHost < b.targetHost ? -1 : 1 },
     },
     {
       title: '目标端口',
       dataIndex: 'targetPort',
+      sorter(a: any, b: any) { return a.targetPort - b.targetPort },
     },
     {
       title: '流量(发送/返回)',
       width: 150,
       dataIndex: 'traffic',
+      sorter(a: any, b: any) { return a.traffic.received - b.traffic.received },
       render(item) {
         console.log(item);
         return <span>{`${prettyBytes(item.sent)}/${prettyBytes(item.received)}`}</span>
@@ -188,7 +206,7 @@ const RoutesTable: React.FC = () => {
               setLoading(false);
               message.info(`已删除代理规则: ${record.name}`);
             }}>
-              <Button size="small" type="primary" danger>删除</Button>
+              <Button size='small' type="primary" danger>删除</Button>
             </Popconfirm>
           </Space>
         ) : null
@@ -337,6 +355,26 @@ const AddProxyForm = (props: { form: FormInstance }) => {
     >
       <Input placeholder='代理规则名称' />
     </Form.Item>
+    {
+      props.form.getFieldValue('proxyProtocol') === 'https' ? <Form.Item
+        labelCol={{ span: 5 }}
+        label="SSL证书"
+        name="certName"
+        rules={[{ required: true, message: '请选择绑定的证书' }]}
+      >
+        <Select
+          placeholder="绑定SSL证书"
+          allowClear
+        >
+          {
+            certsDomains.map((cert) => {
+              return <Option value={cert.name}>{cert.domain}({cert.name})</Option>
+            })
+          }
+        </Select>
+      </Form.Item>
+        : null
+    }
     <Form.Item
       labelCol={{ span: 5 }}
       label="主机(host)"
@@ -344,19 +382,7 @@ const AddProxyForm = (props: { form: FormInstance }) => {
       name="host"
       rules={[{ required: true, message: '输入需要匹配的规则' }]}
     >
-      {
-        props.form.getFieldValue('proxyProtocol') === 'https' ? <Select
-          placeholder="选择代理主机"
-          allowClear
-        >
-          {
-            certsDomains.map((cert) => {
-              return <Option value={cert.domain}>{cert.domain}</Option>
-            })
-          }
-        </Select>
-          : <Input placeholder='输入需要匹配的主机名(正则表达式)' />
-      }
+      <Input placeholder='输入需要匹配的主机名(正则表达式)' />
     </Form.Item>
     <Form.Item
       labelCol={{ span: 5 }}

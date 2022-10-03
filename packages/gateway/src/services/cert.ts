@@ -9,7 +9,9 @@ import { setClientSecureContect } from "../main";
 
 export async function createCert(certName: string, domain: string, createdBy: string) {
 
-  const { cert, key: privateKey, csr } = await certManager.addCert(certName, domain, createdBy);
+  const certObj = await certManager.addCert(certName, domain, createdBy);
+  if (!certObj) return false;
+  const { cert, key: privateKey, csr } = certObj;
   if (!cert || !privateKey || !csr) {
     return false;
   }
@@ -35,14 +37,23 @@ export async function createCert(certName: string, domain: string, createdBy: st
   return true;
 }
 
-export async function reCreateCert(name: string) {
+export async function deleteCert(certName: string) {
+  const appDataSource = await getDataSource();
+  const certRepository = appDataSource.getRepository(CertEntity);
+  const result = await certRepository.delete(certName);
+  return result.affected ? true : false;
+}
+
+export async function reCreateCert(name: string, createdBy: string) {
   const appDataSource = await getDataSource();
   const certRepository = appDataSource.getRepository(CertEntity);
   const entity = await certRepository.findOneBy({ name });
   if (!entity) {
     throw new Error(`no cert with name ${name}`);
   }
-  const { cert, key: privateKey, csr } = await certManager.addCert(entity.name, entity.domain, entity.createdBy);
+  const certObj = await certManager.addCert(entity.name, entity.domain, createdBy);
+  if (!certObj) return false;
+  const { cert, key: privateKey, csr } = certObj;
   if (!cert || !privateKey || !csr) {
     return false;
   }

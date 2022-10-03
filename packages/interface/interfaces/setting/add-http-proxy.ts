@@ -7,7 +7,8 @@ export interface AddHttpProxyRequest {
   port: number;
   proxyHost: string;
   proxyPort: number;
-  proxyProtocol: ProxyProtocol
+  proxyProtocol: ProxyProtocol;
+  certName: string;
 }
 
 export enum ProxyProtocol {
@@ -32,5 +33,6 @@ export const AddHttpRequestValidator = Joi.object<AddHttpProxyRequest>({
   port: Joi.number().integer().positive().required(),
   proxyHost: Joi.string().min(0).max(200).required(),
   proxyPort: Joi.number().integer().positive().required(),
-  proxyProtocol: Joi.string().allow('http'),
+  proxyProtocol: Joi.string().allow('http', 'https'),
+  certName: Joi.string(),
 });

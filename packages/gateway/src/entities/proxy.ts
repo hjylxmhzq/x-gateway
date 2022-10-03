@@ -27,6 +27,9 @@ export class ProxyEntity {
     @Column()
     status: number;
 
+    @Column()
+    certName: string;
+
     @Column({ type: 'unsigned big int', default: 0 })
     trafficSent: number;
 

@@ -5,19 +5,15 @@ import https from 'node:https';
 import { logger, stringifyError } from './utils/logger';
 import registMiddlewares from './middlewares';
 import registRoutes from './routes';
-import cors from '@koa/cors';
-import fs from 'fs-extra';
 import './data-source';
 import getDataSource from './data-source';
 import { CertEntity } from './entities/cert';
+import { UserEntity } from './entities/user';
+import { register } from './services/user';
 
 const app = new Koa();
 
 dotenv.config();
-
-if (process.env.NODE_ENV?.includes('dev')) {
-  app.use(cors({ credentials: true }));
-}
 
 const {
   WEB_CLIENT_PORT = '8100',
@@ -27,10 +23,6 @@ const {
 
 registMiddlewares(app);
 registRoutes(app);
-app.use((ctx, next) => {
-  console.log(ctx.request.url);
-  next();
-})
 
 process.on('uncaughtException', function (err) {
   console.error(err);
@@ -42,6 +34,7 @@ httpServer.listen(parseInt(WEB_CLIENT_PORT, 10), WEB_CLIENT_HOST);
 
 const appDataSource = await getDataSource();
 const certRepository = appDataSource.getRepository(CertEntity);
+const userRepository = appDataSource.getRepository(UserEntity);
 const entity = await certRepository.findOneBy({ useForWebClient: 1 });
 
 const httpsServer = https.createServer(app.callback());
@@ -57,3 +50,16 @@ export function setClientSecureContect(key: Buffer | string, cert: Buffer | stri
 
 logger.info(`web client server is listening on ${WEB_CLIENT_HOST}:${WEB_CLIENT_PORT}`);
 logger.info(`https web client server is listening on ${WEB_CLIENT_HOST}:${WEB_CLIENT_HTTPS_PORT}`);
+
+const userCount = await userRepository.count();
+if (!userCount) {
+  logger.info('no user found, create a temp user: admin');
+  await register('admin', 'admin', '', true);
+  logger.info('create temp user successfully');
+}
+
+if (process.env.NODE_ENV?.includes('dev')) {
+  const warnMsg = '[WARNING] You are running server in development mode, which will NOT have user authentication';
+  console.warn(warnMsg);
+  logger.warn(warnMsg);
+}

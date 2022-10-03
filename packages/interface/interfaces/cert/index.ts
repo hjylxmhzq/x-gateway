@@ -60,3 +60,13 @@ export interface RecreateCertResponse {};
 export const RecreateCertRequestValidator = Joi.object<RecreateCertRequest>({
   name: Joi.string().min(1).max(200).required(),
 });
+
+export interface DeleteCertRequest {
+  name: string;
+};
+
+export interface DeleteCertResponse {};
+
+export const DeleteCertRequestValidator = Joi.object<DeleteCertRequest>({
+  name: Joi.string().min(1).max(200).required(),
+});

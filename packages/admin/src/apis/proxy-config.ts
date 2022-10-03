@@ -12,6 +12,7 @@ export interface ProxyParamenter {
   proxyPort: number;
   proxyProtocol: ProxyProtocol.http
   port: number;
+  certName?: string;
 }
 
 export const addHttpProxy = async (proxyParams: ProxyParamenter) => {
@@ -23,6 +24,7 @@ export const addHttpProxy = async (proxyParams: ProxyParamenter) => {
     proxyHost: proxyParams.proxyHost,
     proxyPort: proxyParams.proxyPort,
     proxyProtocol: proxyParams.proxyProtocol,
+    certName: proxyParams.certName || '',
   }
   const result = await post<AddHttpProxyResponse>('/setting/add-proxy', params);
   return result;

@@ -1,5 +1,5 @@
 Arguments: 
-  /usr/local/bin/node /Users/tonyhu/.yarn/lib/cli.js add -D @types/root__keypairs
+  /usr/local/bin/node /Users/tonyhu/.yarn/lib/cli.js add -D @types/koa-rewrite
 
 PATH: 
   /opt/homebrew/opt/mysql-client/bin:/Users/tonyhu/.yarn/bin:/Users/tonyhu/.config/yarn/global/node_modules/.bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin:/opt/homebrew/opt/mysql-client/bin:/Users/tonyhu/.yarn/bin:/Users/tonyhu/.config/yarn/global/node_modules/.bin:/opt/homebrew/bin:/opt/homebrew/sbin
@@ -14,7 +14,7 @@ Platform:
   darwin arm64
 
 Trace: 
-  Error: https://registry.npm.taobao.org/@types%2froot__keypairs: [NOT_FOUND] @types/root__keypairs not found
+  Error: https://registry.npm.taobao.org/@types%2fkoa-rewrite: [NOT_FOUND] @types/koa-rewrite not found
       at params.callback [as _callback] (/Users/tonyhu/.yarn/lib/cli.js:66138:18)
       at self.callback (/Users/tonyhu/.yarn/lib/cli.js:140883:22)
       at Request.emit (node:events:513:28)
@@ -39,7 +39,7 @@ npm manifest:
     "scripts": {
       "start": "cross-env NODE_ENV=development gulp watch",
       "build": "cross-env NODE_ENV=production gulp build",
-      "dev:app": "node ./dist/main.js"
+      "dev:app": "cross-env NODE_ENV=development node --es-module-specifier-resolution=node ./dist/main.js"
     },
     "devDependencies": {
       "@rollup/plugin-run": "^2.1.0",
@@ -47,6 +47,7 @@ npm manifest:
       "@types/fs-extra": "^9.0.13",
       "@types/koa": "^2.13.5",
       "@types/koa-bodyparser": "^4.3.7",
+      "@types/koa-static": "^4.0.2",
       "@types/koa__cors": "^3.3.0",
       "@types/koa__router": "^8.0.11",
       "@types/node": "^18.7.14",
@@ -62,14 +63,22 @@ npm manifest:
       "@koa/cors": "^3.4.1",
       "@koa/router": "^12.0.0",
       "@root/acme": "^3.1.0",
+      "@root/csr": "^0.8.1",
       "@root/keypairs": "^0.10.3",
+      "@root/pem": "^1.0.4",
+      "acme-client": "^5.0.0",
+      "acme-http-01-test": "^3.1.3",
+      "acme-http-01-webroot": "^3.0.0",
       "better-sqlite3": "^7.6.2",
       "dotenv": "^16.0.2",
       "fs-extra": "^10.1.0",
       "http-proxy": "^1.18.1",
       "koa": "^2.13.4",
       "koa-bodyparser": "^4.3.0",
+      "koa-rewrite": "^3.0.1",
+      "koa-static": "^5.0.0",
       "pretty-bytes": "^6.0.0",
+      "punycode": "^2.1.1",
       "request-ip": "^3.3.0",
       "typeorm": "^0.3.10",
       "winston": "^3.8.1",
@@ -2791,12 +2800,17 @@ Lockfile:
       "@root/pem" "^1.0.4"
       "@root/x509" "^0.7.2"
   
+  "@root/mkdirp@^1.0.0":
+    version "1.0.0"
+    resolved "https://registry.npmmirror.com/@root/mkdirp/-/mkdirp-1.0.0.tgz#f200e29568d711d3357151af0d2648e7eaf21b6f"
+    integrity sha512-hxGAYUx5029VggfG+U9naAhQkoMSXtOeXtbql97m3Hi6/sQSRL/4khKZPyOF6w11glyCOU38WCNLu9nUcSjOfA==
+  
   "@root/pem@^1.0.4":
     version "1.0.4"
     resolved "https://registry.npmmirror.com/@root/pem/-/pem-1.0.4.tgz#9ecc3419c0a05c92b8ecbfe0a41f474970f8c72f"
     integrity sha512-rEUDiUsHtild8GfIjFE9wXtcVxeS+ehCJQBwbQQ3IVfORKHK93CFnRtkr69R75lZFjcmKYVc+AXDB+AeRFOULA==
   
-  "@root/request@^1.6.1":
+  "@root/request@^1.3.11", "@root/request@^1.6.1":
     version "1.9.2"
     resolved "https://registry.npmmirror.com/@root/request/-/request-1.9.2.tgz#3b561b3f3b61d3a6264cdb25cfef7c473749e7d5"
     integrity sha512-wVaL9yVV9oDR9UNbPZa20qgY+4Ch6YN8JUkaE4el/uuS5dmhD8Lusm/ku8qJVNtmQA56XLzEDCRS6/vfpiHK2A==
@@ -3268,6 +3282,21 @@ Lockfile:
     dependencies:
       "@types/koa" "*"
   
+  "@types/koa-send@*":
+    version "4.1.3"
+    resolved "https://registry.npmmirror.com/@types/koa-send/-/koa-send-4.1.3.tgz#17193c6472ae9e5d1b99ae8086949cc4fd69179d"
+    integrity sha512-daaTqPZlgjIJycSTNjKpHYuKhXYP30atFc1pBcy6HHqB9+vcymDgYTguPdx9tO4HMOqNyz6bz/zqpxt5eLR+VA==
+    dependencies:
+      "@types/koa" "*"
+  
+  "@types/koa-static@^4.0.2":
+    version "4.0.2"
+    resolved "https://registry.npmmirror.com/@types/koa-static/-/koa-static-4.0.2.tgz#a199d2d64d2930755eb3ea370aeaf2cb6f501d67"
+    integrity sha512-ns/zHg+K6XVPMuohjpOlpkR1WLa4VJ9czgUP9bxkCDn0JZBtUWbD/wKDZzPGDclkQK1bpAEScufCHOy8cbfL0w==
+    dependencies:
+      "@types/koa" "*"
+      "@types/koa-send" "*"
+  
   "@types/koa@*", "@types/koa@^2.13.5":
     version "2.13.5"
     resolved "https://registry.npmmirror.com/@types/koa/-/koa-2.13.5.tgz#64b3ca4d54e08c0062e89ec666c9f45443b21a61"
@@ -3710,6 +3739,37 @@ Lockfile:
     dependencies:
       mime-types "~2.1.34"
       negotiator "0.6.3"
+  
+  acme-challenge-test@^3.1.0:
+    version "3.3.2"
+    resolved "https://registry.npmmirror.com/acme-challenge-test/-/acme-challenge-test-3.3.2.tgz#285e0b927d233fe653ded40745cfcf66e083ef8e"
+    integrity sha512-0AbMcaON20wpI5vzFDAqwcv2VerY4xIlNCqX0w1xEJUIu/EQtQNmkje+rKNuy2TUl2KBMdIaR6YBbJUdaEiC4w==
+    dependencies:
+      "@root/request" "^1.3.11"
+  
+  acme-client@^5.0.0:
+    version "5.0.0"
+    resolved "https://registry.npmmirror.com/acme-client/-/acme-client-5.0.0.tgz#6eb5183f2ee597ff9f837063639e11f411720b5a"
+    integrity sha512-sNeNiBKoxfLZi3wkEp27vq7coiuKBFz9LYBK00sWcODYupeHwMk8sXJOqLola9gkpTVdo569ApDqbwVa2FAd4w==
+    dependencies:
+      axios "0.27.2"
+      debug "^4.1.1"
+      jsrsasign "^10.5.26"
+      node-forge "^1.3.1"
+  
+  acme-http-01-test@^3.1.3:
+    version "3.1.3"
+    resolved "https://registry.npmmirror.com/acme-http-01-test/-/acme-http-01-test-3.1.3.tgz#c11f67be420c6c6eb1ab1d9a21f39990e2d2d041"
+    integrity sha512-OMjpRwuzNzBEtpDkyzAfOYuaKShysydqkkf/sgJmYR++87pIW60rOLV/rnO6kyGuIRfhmuRMYn+90Dycuco1Wg==
+    dependencies:
+      acme-challenge-test "^3.1.0"
+  
+  acme-http-01-webroot@^3.0.0:
+    version "3.0.0"
+    resolved "https://registry.npmmirror.com/acme-http-01-webroot/-/acme-http-01-webroot-3.0.0.tgz#ec3a0e3c6edd275f189492feb8c2f9f18255ff0a"
+    integrity sha512-K63egONklWEOYz0rgl9w2a24eIZ+KkDxCJdxgjN4a0l5vVUys7lUIcwj8MtVjBcGvMBwXfWDwOshLDH+UrNscA==
+    dependencies:
+      "@root/mkdirp" "^1.0.0"
   
   acorn-globals@^6.0.0:
     version "6.0.0"
@@ -4263,6 +4323,14 @@ Lockfile:
     version "4.4.3"
     resolved "https://registry.npmmirror.com/axe-core/-/axe-core-4.4.3.tgz#11c74d23d5013c0fa5d183796729bc3482bd2f6f"
     integrity sha512-32+ub6kkdhhWick/UjvEwRchgoetXqTK14INLqbGm5U2TzBkBNF3nQtLYm8ovxSkQWArjEQvftCKryjZaATu3w==
+  
+  axios@0.27.2:
+    version "0.27.2"
+    resolved "https://registry.npmmirror.com/axios/-/axios-0.27.2.tgz#207658cc8621606e586c85db4b41a750e756d972"
+    integrity sha512-t+yRIyySRTp/wua5xEr+z1q60QmLq8ABsS5O9Me1AsE5dfKqgnCFzwiCZZ/cGNd1lq4/7akDWMxdhVlucjmnOQ==
+    dependencies:
+      follow-redirects "^1.14.9"
+      form-data "^4.0.0"
   
   axobject-query@^2.2.0:
     version "2.2.0"
@@ -5767,7 +5835,7 @@ Lockfile:
     dependencies:
       ms "2.1.2"
   
-  debug@^3.2.6, debug@^3.2.7:
+  debug@^3.1.0, debug@^3.2.6, debug@^3.2.7:
     version "3.2.7"
     resolved "https://registry.npmmirror.com/debug/-/debug-3.2.7.tgz#72580b7e9145fb39b6676f9c5e5fb100b934179a"
     integrity sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==
@@ -7126,6 +7194,11 @@ Lockfile:
     resolved "https://registry.npmmirror.com/follow-redirects/-/follow-redirects-1.15.1.tgz#0ca6a452306c9b276e4d3127483e29575e207ad5"
     integrity sha512-yLAMQs+k0b2m7cVxpS1VKJVvoz7SS9Td1zss3XRwXj+ZDH00RJgnuLx7E44wx02kQLrdM3aOOy+FpzS7+8OizA==
   
+  follow-redirects@^1.14.9:
+    version "1.15.2"
+    resolved "https://registry.npmmirror.com/follow-redirects/-/follow-redirects-1.15.2.tgz#b460864144ba63f2681096f274c4e57026da2c13"
+    integrity sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==
+  
   for-in@^1.0.1, for-in@^1.0.2:
     version "1.0.2"
     resolved "https://registry.npmmirror.com/for-in/-/for-in-1.0.2.tgz#81068d295a8142ec0ac726c6e2200c30fb6d5e80"
@@ -7161,6 +7234,15 @@ Lockfile:
     version "3.0.1"
     resolved "https://registry.npmmirror.com/form-data/-/form-data-3.0.1.tgz#ebd53791b78356a99af9a300d4282c4d5eb9755f"
     integrity sha512-RHkBKtLWUVwd7SqRIvCZMEvAMoGUp0XU+seQiZejj0COz3RI3hWP4sCv3gZWWLjJTd7rGwcsF5eKZGii0r/hbg==
+    dependencies:
+      asynckit "^0.4.0"
+      combined-stream "^1.0.8"
+      mime-types "^2.1.12"
+  
+  form-data@^4.0.0:
+    version "4.0.0"
+    resolved "https://registry.npmmirror.com/form-data/-/form-data-4.0.0.tgz#93919daeaf361ee529584b9b31664dc12c9fa452"
+    integrity sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==
     dependencies:
       asynckit "^0.4.0"
       combined-stream "^1.0.8"
@@ -7887,7 +7969,7 @@ Lockfile:
       statuses "2.0.1"
       toidentifier "1.0.1"
   
-  http-errors@^1.6.3, http-errors@~1.8.0:
+  http-errors@^1.6.3, http-errors@^1.7.3, http-errors@~1.8.0:
     version "1.8.1"
     resolved "https://registry.npmmirror.com/http-errors/-/http-errors-1.8.1.tgz#7c3f28577cbc8a207388455dbd62295ed07bd68c"
     integrity sha512-Kpk9Sm7NmI+RHhnj6OIWDI1d6fIoFAtFt9RLaTMRlg/8w49juAStsrBgp0Dp4OdxdVbRIeKhtCUvoi/RuAhO4g==
@@ -9312,6 +9394,11 @@ Lockfile:
     resolved "https://registry.npmmirror.com/jsonpointer/-/jsonpointer-5.0.1.tgz#2110e0af0900fd37467b5907ecd13a7884a1b559"
     integrity sha512-p/nXbhSEcu3pZRdkW1OfJhpsVtW1gd4Wa1fnQc9YLiTfAjn0312eMKimbdIQzuZl9aa9xUGaRlP9T/CJE/ditQ==
   
+  jsrsasign@^10.5.26:
+    version "10.5.27"
+    resolved "https://registry.npmmirror.com/jsrsasign/-/jsrsasign-10.5.27.tgz#481defb1206aa48cd740c3fce8ff546efb5bb45e"
+    integrity sha512-1F4LmDeJZHYwoVvB44jEo2uZL3XuwYNzXCDOu53Ui6vqofGQ/gCYDmaxfVZtN0TGd92UKXr/BONcfrPonUIcQQ==
+  
   "jsx-ast-utils@^2.4.1 || ^3.0.0", jsx-ast-utils@^3.3.2:
     version "3.3.3"
     resolved "https://registry.npmmirror.com/jsx-ast-utils/-/jsx-ast-utils-3.3.3.tgz#76b3e6e6cece5c69d49a5792c3d01bd1a0cdc7ea"
@@ -9396,6 +9483,31 @@ Lockfile:
     dependencies:
       co "^4.6.0"
       koa-compose "^4.1.0"
+  
+  koa-rewrite@^3.0.1:
+    version "3.0.1"
+    resolved "https://registry.npmmirror.com/koa-rewrite/-/koa-rewrite-3.0.1.tgz#37c2ae31f31a7af98cc1b028020b321d75a7d294"
+    integrity sha512-KIGvmurKl2TwfceZEWzHWEmHHyJbkTKUZ2ebpa8G2Ywet0jc3zRhPwi8yxG/tEUra0wFAPDh9Ph8ln7okPcyEg==
+    dependencies:
+      debug "^3.1.0"
+      path-to-regexp "^2.1.0"
+  
+  koa-send@^5.0.0:
+    version "5.0.1"
+    resolved "https://registry.npmmirror.com/koa-send/-/koa-send-5.0.1.tgz#39dceebfafb395d0d60beaffba3a70b4f543fe79"
+    integrity sha512-tmcyQ/wXXuxpDxyNXv5yNNkdAMdFRqwtegBXUaowiQzUKqJehttS0x2j0eOZDQAyloAth5w6wwBImnFzkUz3pQ==
+    dependencies:
+      debug "^4.1.1"
+      http-errors "^1.7.3"
+      resolve-path "^1.4.0"
+  
+  koa-static@^5.0.0:
+    version "5.0.0"
+    resolved "https://registry.npmmirror.com/koa-static/-/koa-static-5.0.0.tgz#5e92fc96b537ad5219f425319c95b64772776943"
+    integrity sha512-UqyYyH5YEXaJrf9S8E23GoJFQZXkBVJ9zYYMPGz919MSX1KuvAcycIuS0ci150HCoPf4XQVhQ84Qf8xRPWxFaQ==
+    dependencies:
+      debug "^3.1.0"
+      koa-send "^5.0.0"
   
   koa@^2.13.4:
     version "2.13.4"
@@ -10266,7 +10378,7 @@ Lockfile:
     dependencies:
       whatwg-url "^5.0.0"
   
-  node-forge@^1:
+  node-forge@^1, node-forge@^1.3.1:
     version "1.3.1"
     resolved "https://registry.npmmirror.com/node-forge/-/node-forge-1.3.1.tgz#be8da2af243b2417d5f646a770663a92b7e9ded3"
     integrity sha512-dPEtOeMvF9VMcYV/1Wb8CPoVAXtp6MKMlcbAt4ddqmGqUJ6fQZFXkNZNkNlfevtNkGtaSoXf/vNNNSvgrdXwtA==
@@ -11052,7 +11164,7 @@ Lockfile:
     resolved "https://registry.npmmirror.com/path-exists/-/path-exists-4.0.0.tgz#513bdbe2d3b95d7762e8c1137efa195c6c61b5b3"
     integrity sha512-ak9Qy5Q7jYb2Wwcey5Fpvg2KoAc/ZIhLSLOSBmRmygPsGwkVVt0fZa0qrtMz+m6tJTAHfZQ8FnmB4MG4LWy7/w==
   
-  path-is-absolute@^1.0.0:
+  path-is-absolute@1.0.1, path-is-absolute@^1.0.0:
     version "1.0.1"
     resolved "https://registry.npmmirror.com/path-is-absolute/-/path-is-absolute-1.0.1.tgz#174b9268735534ffbc7ace6bf53a5a9e1b5c5f5f"
     integrity sha512-AVbw3UJ2e9bq64vSaS9Am0fje1Pa8pbGqTTsmXfaIiMpnr5DlDhfJOuLj9Sf95ZPVDAUerDfEk88MPmPe7UCQg==
@@ -11083,6 +11195,11 @@ Lockfile:
     version "0.1.7"
     resolved "https://registry.npmmirror.com/path-to-regexp/-/path-to-regexp-0.1.7.tgz#df604178005f522f15eb4490e7247a1bfaa67f8c"
     integrity sha512-5DFkuoqlv1uYQKxy8omFBeJPQcdoE07Kv2sferDCrAq1ohOU+MSDswDIbnx3YAM60qIOnYa53wBhXW0EbMonrQ==
+  
+  path-to-regexp@^2.1.0:
+    version "2.4.0"
+    resolved "https://registry.npmmirror.com/path-to-regexp/-/path-to-regexp-2.4.0.tgz#35ce7f333d5616f1c1e1bfe266c3aba2e5b2e704"
+    integrity sha512-G6zHoVqC6GGTQkZwF4lkuEyMbVOjoBKAEybQUypI1WTkqinCOrq2x6U2+phkJ1XsEMTy4LjtwPI7HW+NVrRR2w==
   
   path-to-regexp@^6.2.1:
     version "6.2.1"
@@ -12855,6 +12972,14 @@ Lockfile:
     integrity sha512-NYDgziiroVeDC29xq7bp/CacZERYsA9bXYd1ZmcJlF3BcrZv5pTb4NG7SjdyKDnXZ84aC4vo2u6sNKIA1LCu/A==
     dependencies:
       value-or-function "^3.0.0"
+  
+  resolve-path@^1.4.0:
+    version "1.4.0"
+    resolved "https://registry.npmmirror.com/resolve-path/-/resolve-path-1.4.0.tgz#c4bda9f5efb2fce65247873ab36bb4d834fe16f7"
+    integrity sha512-i1xevIst/Qa+nA9olDxLWnLk8YZbi8R/7JPbCMcgyWaFR6bKWaexgJgEB5oc2PKMjYdrHynyz0NY+if+H98t1w==
+    dependencies:
+      http-errors "~1.6.2"
+      path-is-absolute "1.0.1"
   
   resolve-url-loader@^4.0.0:
     version "4.0.0"

@@ -19,13 +19,20 @@ router.post('/add-proxy', async (ctx, next) => {
   const body = ctx.request.body as AddHttpProxyRequest;
   try {
     await AddHttpRequestValidator.validateAsync(body);
-    if (body.proxyProtocol === ProxyProtocol.http) {
-      const proxy = await proxyManager.addHttpProxy(body.name, body.port, new RegExp(body.host), new RegExp(body.path), body.proxyHost, body.proxyPort);
-      if (proxy) {
-        ctx.body = resFac(0, {}, 'ok');
-      } else {
-        ctx.body = resFac(1, {}, `A proxy with name [${body.name}] is already existed`);
-      }
+    const proxy = await proxyManager.addHttpProxy(
+      body.name,
+      body.port,
+      new RegExp(body.host),
+      new RegExp(body.path),
+      body.proxyHost,
+      body.proxyPort,
+      body.certName ? 'https' : 'http',
+      body.certName,
+    );
+    if (proxy) {
+      ctx.body = resFac(0, {}, 'ok');
+    } else {
+      ctx.body = resFac(1, {}, `A proxy with name [${body.name}] is already existed`);
     }
   } catch (e: any) {
     ctx.status = 400;

@@ -76,7 +76,7 @@ export async function createLetsencryptCert(domain: string, logger: (msg: string
   }
 
   const client = new acme.Client({
-    directoryUrl: acme.directory.letsencrypt.staging,
+    directoryUrl: process.env.NODE_ENV?.includes('dev') ? acme.directory.letsencrypt.staging : acme.directory.letsencrypt.production,
     accountKey: await acme.crypto.createPrivateKey()
   });
 
@@ -95,9 +95,13 @@ export async function createLetsencryptCert(domain: string, logger: (msg: string
   });
 
   /* Done */
-  logger(`CSR:\n${csr.toString()}`);
-  logger(`Private key:\n${key.toString()}`);
-  logger(`Certificate:\n${cert.toString()}`);
+  if (process.env.NODE_ENV?.includes('dev')) {
+    logger(`CSR:\n${csr.toString()}`);
+    logger(`Private key:\n${key.toString()}`);
+    logger(`Certificate:\n${cert.toString()}`);
+  }
+
+  logger('----- FINISH -----');
 
   return { csr, privateKey: key, cert };
 }
@@ -117,7 +121,8 @@ interface RunningCertInstance {
 class CertManager {
   running: RunningCertInstance[] = [];
   async addCert(name: string, domain: string, createdBy: string, onSuccess = async (instance: RunningCertInstance) => undefined) {
-    const instance: RunningCertInstance = {
+    
+    let instance: RunningCertInstance = {
       name,
       log: 'start request certification...\n',
       domain,
@@ -125,7 +130,19 @@ class CertManager {
       createdAt: Date.now(),
       status: 'running',
     }
-    this.running.push(instance);
+    const exist = this.running.find(instance => instance.name === name);
+    if (exist) {
+      if (exist.status === 'running') {
+        return null;
+      }
+      exist.createdBy = createdBy;
+      exist.createdAt = Date.now();
+      exist.log += '----- REGENERATE -----\n';
+      exist.status = 'running';
+      instance = exist;
+    } else {
+      this.running.push(instance);
+    }
 
     const processor = async (req: IncomingMessage, res: ServerResponse) => {
 
@@ -161,8 +178,10 @@ class CertManager {
       instance.cert = cert.toString();
       instance.csr = csr.toString();
       instance.status = 'success';
+      onFinished();
       await onSuccess(instance);
     } catch (e) {
+      onFinished();
       instance.status = 'fail';
       instance.log += stringifyError(e) + '\n';
       logger.error(stringifyError(e));

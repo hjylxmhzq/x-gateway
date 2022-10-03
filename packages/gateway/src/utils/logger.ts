@@ -23,6 +23,9 @@ const logger = {
   },
   error(msg: string) {
     defaultLogger.error(msg, { date: Date.now() });
+  },
+  warn(msg: string) {
+    defaultLogger.warn(msg, { date: Date.now() });
   }
 }
 

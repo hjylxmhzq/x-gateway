@@ -1,4 +1,4 @@
-import { RequestNewCertRequest, RequestNewCertResponse, GetRunningCertProcessResponse, GetAllDelployedCertResponse, SetCertForWebClientRequest, SetCertForWebClientResponse } from "@x-gateway/interface";
+import { RequestNewCertRequest, RequestNewCertResponse, GetRunningCertProcessResponse, GetAllDelployedCertResponse, SetCertForWebClientRequest, SetCertForWebClientResponse, RecreateCertRequest, DeleteCertRequest, DeleteCertResponse } from "@x-gateway/interface";
 import { post } from "./common";
 
 export const requestNewCert = async (params: RequestNewCertRequest) => {
@@ -18,5 +18,15 @@ export const getAllDeployedCerts = async () => {
 
 export const setCertForWebClient = async (params: SetCertForWebClientRequest) => {
   const result = await post<SetCertForWebClientResponse>('/cert/set-cert-for-webclient', params);
+  return result;
+}
+
+export const recreateCert = async (params: RecreateCertRequest) => {
+  const result = await post<SetCertForWebClientResponse>('/cert/recreate-cert', params);
+  return result;
+}
+
+export const deleteCert = async (params: DeleteCertRequest) => {
+  const result = await post<DeleteCertResponse>('/cert/delete-cert', params);
   return result;
 }

@@ -39,7 +39,7 @@ export class HttpProxy extends TunnelProxy {
   traffic: { sent: number; received: number } = { sent: 0, received: 0 };
   isDestroyed = false;
   requestCount = 0;
-  shouldAuth = false;
+  needAuth = false;
   secureContext = {
     key: '',
     cert: '',
@@ -66,7 +66,7 @@ export class HttpProxy extends TunnelProxy {
         if (!hostname || !host.test(hostname) || !path.test(reqPath)) {
           return false;
         }
-        const isAuthed = (this.shouldAuth ? await authFn(req) : true);
+        const isAuthed = (this.needAuth ? await authFn(req) : true);
         if (isAuthed) {
           this.requestCount++;
           proxy.web(req, res, { target: `http://${targetHost}:${targetPort}` });
@@ -228,7 +228,7 @@ class ProxyManager {
     } else {
       proxy = new HttpProxy(name, port, host, path, targetHost, targetPort, authFn);
     }
-    proxy.shouldAuth = needAuth;
+    proxy.needAuth = needAuth;
     await proxy.start();
     this.httpProxies.push(proxy);
 
@@ -314,7 +314,7 @@ class ProxyManager {
         cert,
         key,
       });
-      proxy.shouldAuth = entity.needAuth;
+      proxy.needAuth = entity.needAuth;
       this.httpProxies.push(proxy);
       proxy.traffic.sent = entity.trafficSent;
       proxy.traffic.received = entity.trafficReceived;

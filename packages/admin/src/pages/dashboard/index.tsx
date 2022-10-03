@@ -44,7 +44,7 @@ const Dashboard: React.FC = () => {
   const [userInfo, setUserInfo] = useState<GetUserInfoResponse>({ name: '', email: '' });
   const userInfoPopover = <div className={style['user-info-popover']}>
     <div>已登陆账户：<strong>{userInfo.name}</strong></div>
-    <div>{userInfo.email}</div>
+    <div>Email: {userInfo.email}</div>
     <Divider></Divider>
     <Button style={{width: '100%'}} onClick={async () => {
       await logout();

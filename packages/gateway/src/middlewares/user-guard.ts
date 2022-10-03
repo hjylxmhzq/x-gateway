@@ -1,4 +1,5 @@
 import Koa from 'koa';
+import { getConfig } from '../utils/config';
 
 const ignore = [
   /^\/login$/,
@@ -24,8 +25,13 @@ function userGuard() {
       await next();
       return;
     }
+    const useHttps = getConfig('https') === 'true';
+    const webClientPort = useHttps
+    ? parseInt(process.env.WEB_CLIENT_HTTPS_PORT || '8100', 10)
+    : parseInt(process.env.WEB_CLIENT_PORT || '8443', 10);
+    const protocol = useHttps ? 'https' : 'http';
     const successRedirect = `${ctx.protocol}://${ctx.host}${ctx.path}${ctx.querystring ? '?' + ctx.querystring : ''}`;
-    const redirectTo = `http://${ctx.hostname}:${process.env.WEB_CLIENT_PORT || 8100}/login?redirect=${encodeURIComponent(successRedirect)}`;
+    const redirectTo = `${protocol}://${ctx.hostname}:${webClientPort}/login?redirect=${encodeURIComponent(successRedirect)}`;
     ctx.redirect(redirectTo);
     await next();
   });

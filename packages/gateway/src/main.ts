@@ -12,6 +12,7 @@ import { UserEntity } from './entities/user';
 import { register } from './services/user';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { setConfig } from './utils/config';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -47,6 +48,7 @@ const httpsServer = https.createServer(app.callback());
 httpsServer.listen(parseInt(WEB_CLIENT_HTTPS_PORT, 10), WEB_CLIENT_HOST);
 
 if (entity) {
+  setConfig('https', 'true');
   setClientSecureContect(entity.key, entity.cert);
 }
 

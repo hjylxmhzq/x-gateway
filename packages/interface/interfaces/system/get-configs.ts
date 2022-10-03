@@ -1,0 +1,1 @@
+export type GetConfigsResponse = Record<string, string>;

@@ -10,7 +10,8 @@
   "scripts": {
     "start": "cross-env NODE_ENV=development gulp watch",
     "build": "cross-env NODE_ENV=production gulp build",
-    "dev:app": "cross-env NODE_ENV=development node --es-module-specifier-resolution=node ./dist/main.js"
+    "dev:app": "cross-env NODE_ENV=development node --es-module-specifier-resolution=node ./dist/main.js",
+    "start:app": "cross-env NODE_ENV=production node --es-module-specifier-resolution=node ./dist/main.js"
   },
   "devDependencies": {
     "@rollup/plugin-run": "^2.1.0",

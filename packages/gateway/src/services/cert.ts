@@ -6,6 +6,7 @@ import fs from 'fs-extra';
 import getDataSource from "../data-source";
 import { CertEntity } from "../entities/cert";
 import { setClientSecureContect } from "../main";
+import { setConfig } from "../utils/config";
 
 export async function createCert(certName: string, domain: string, createdBy: string) {
 
@@ -101,6 +102,7 @@ export async function setCertForWebClient(name: string) {
     entity.useForWebClient = 1;
     await certRepository.save(entity);
     setClientSecureContect(entity.key, entity.cert);
+    setConfig('https', 'true');
   }
 
 }

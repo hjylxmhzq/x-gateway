@@ -48,7 +48,7 @@ setSafeInterval(async () => {
     }
   }
 
-  const deleted = await trafficRepository.createQueryBuilder().where(`time < ${createFuzzyTime(now - MAX_HISTORY_TIME)}`).delete().execute();
+  const deleted = await trafficRepository.createQueryBuilder().where(`realTime < ${now - MAX_HISTORY_TIME}`).delete().execute();
 
 }, 20000);
 

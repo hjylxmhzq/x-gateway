@@ -18,5 +18,5 @@ export const AddHttpRequestValidator = Joi.object({
     proxyHost: Joi.string().min(0).max(200).required(),
     proxyPort: Joi.number().integer().positive().required(),
     proxyProtocol: Joi.string().allow('http', 'https'),
-    certName: Joi.string(),
+    certName: Joi.string().allow(null, ''),
 });

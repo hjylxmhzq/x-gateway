@@ -28,6 +28,7 @@ router.post('/add-proxy', async (ctx, next) => {
       body.proxyPort,
       body.certName ? 'https' : 'http',
       body.certName,
+      body.needAuth,
     );
     if (proxy) {
       ctx.body = resFac(0, {}, 'ok');

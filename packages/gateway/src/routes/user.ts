@@ -52,6 +52,7 @@ router.post('/logout', async (ctx, next) => {
   try {
     ctx.type = 'json';
     ctx.session.isLogin = false;
+    console.log(ctx.session);
     ctx.body = resFac(0, {}, 'success');
   } catch (e) {
     ctx.status = 400;

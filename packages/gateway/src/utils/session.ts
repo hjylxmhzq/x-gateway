@@ -2,6 +2,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import Koa from 'koa';
 import cookie from 'cookie';
 import { v4 as uuidv4 } from 'uuid';
+import { getConfig } from './config';
 
 const SESSION_KEY_NAME = 'x-gateway-sess-key'
 
@@ -63,6 +64,18 @@ class SessionManager {
       await next();
     }
   }
+}
+
+export function redirectToLogin(protocol: 'http' | 'https', host: string, path: string, querystring?: string) {
+  const hostname = host.split(':')[0];
+  const useHttps = getConfig('https') === 'true';
+  const webClientPort = useHttps
+  ? parseInt(process.env.WEB_CLIENT_HTTPS_PORT || '8100', 10)
+  : parseInt(process.env.WEB_CLIENT_PORT || '8443', 10);
+  const loginProtocol = useHttps ? 'https' : 'http';
+  const successRedirect = `${protocol}://${host}${path}${querystring ? '?' + querystring : ''}`;
+  const redirectTo = `${loginProtocol}://${hostname}:${webClientPort}/login?redirect=${encodeURIComponent(successRedirect)}`;
+  return redirectTo;
 }
 
 const sessionManager = new SessionManager();

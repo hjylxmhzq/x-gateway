@@ -35,4 +35,7 @@ export class ProxyEntity {
 
     @Column({ type: 'unsigned big int', default: 0 })
     trafficReceived: number;
+
+    @Column()
+    needAuth: boolean;
 }

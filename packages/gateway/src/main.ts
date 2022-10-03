@@ -13,6 +13,8 @@ import { register } from './services/user';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { setConfig } from './utils/config';
+import { createSecureContext, SecureContext } from 'node:tls';
+import { proxyManager } from './utils/proxy-manager';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -44,7 +46,28 @@ const certRepository = appDataSource.getRepository(CertEntity);
 const userRepository = appDataSource.getRepository(UserEntity);
 const entity = await certRepository.findOneBy({ useForWebClient: 1 });
 
-const httpsServer = https.createServer(app.callback());
+const defaltSecureContext: { key: string | Buffer; cert: string | Buffer } = { key: '', cert: '' };
+
+function SNICallback(hostname: string, cb: (err: Error | null, ctx?: SecureContext) => void) {
+  const proxies = proxyManager.httpProxies;
+  const proxy = proxies.find((p) => {
+    if (p.type === 'https' && p.host.test(hostname)) {
+      return true;
+    }
+    return false;
+  });
+  if (proxy) {
+    cb(null, createSecureContext(proxy.secureContext));
+    return;
+  }
+  if (defaltSecureContext.cert && defaltSecureContext.key) {
+    cb(null, createSecureContext(defaltSecureContext));
+    return;
+  }
+  cb(new Error('cannot find proper secure context'));
+}
+
+const httpsServer = https.createServer({ SNICallback }, app.callback());
 httpsServer.listen(parseInt(WEB_CLIENT_HTTPS_PORT, 10), WEB_CLIENT_HOST);
 
 if (entity) {
@@ -53,6 +76,8 @@ if (entity) {
 }
 
 export function setClientSecureContect(key: Buffer | string, cert: Buffer | string) {
+  defaltSecureContext.key = key;
+  defaltSecureContext.cert = cert;
   httpsServer.setSecureContext({ key, cert });
 }
 

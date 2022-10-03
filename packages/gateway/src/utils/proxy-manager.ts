@@ -1,16 +1,13 @@
-import http from 'node:http';
+import http, { IncomingMessage } from 'node:http';
 import https from 'node:https';
 import internal from 'node:stream';
 import httpProxy from 'http-proxy';
 import { ProxyEntity } from '../entities/proxy';
 import getDataSource from '../data-source';
-import sessionManager from './session';
+import sessionManager, { redirectToLogin } from './session';
 import { CertEntity } from '../entities/cert';
 
-export enum ProxyType {
-  http = 'http',
-  https = 'https',
-}
+export type ProxyType = 'http' | 'https';
 
 export enum ProxyStatus {
   running = 'running',
@@ -43,6 +40,10 @@ export class HttpProxy extends TunnelProxy {
   isDestroyed = false;
   requestCount = 0;
   shouldAuth = false;
+  secureContext = {
+    key: '',
+    cert: '',
+  } as { key: string | Buffer; cert: string | Buffer };
   processor: HttpRequestProcessor;
   constructor(
     public name: string,
@@ -54,19 +55,18 @@ export class HttpProxy extends TunnelProxy {
     public authFn: (req: http.IncomingMessage) => Promise<boolean> | boolean = () => true,
     public options: { type: 'http' | 'https', cert?: string | Buffer, key?: string | Buffer } = { type: 'http' }
   ) {
-    super(options.type === 'http' ? ProxyType.http : ProxyType.https);
+    super(options.type);
     const processor: HttpRequestProcessor = async (req, res) => {
       if (this.status !== ProxyStatus.running) {
         return false;
       }
-      const session = sessionManager.getSessionFromReq(req, res);
       const reqPath = req.url;
       if (req.headers.host && reqPath) {
         const [hostname] = req.headers.host.split(':');
         if (!hostname || !host.test(hostname) || !path.test(reqPath)) {
           return false;
         }
-        const isAuthed = (!this.shouldAuth ? true : await authFn(req));
+        const isAuthed = (this.shouldAuth ? await authFn(req) : true);
         if (isAuthed) {
           this.requestCount++;
           proxy.web(req, res, { target: `http://${targetHost}:${targetPort}` });
@@ -79,10 +79,20 @@ export class HttpProxy extends TunnelProxy {
             });
           });
           return true;
+        } else {
+          const [path, querystring] = req.url?.split('?') || ['', ''];
+          const redirectUrl = redirectToLogin(options.type, req.headers.host, path, querystring);
+          res.statusCode = 302;
+          res.setHeader('location', redirectUrl);
+          res.end();
+          return true;
         }
-        return false;
       }
       return false;
+    }
+    if (options.type === 'https' && options.cert && options.key) {
+      this.secureContext.key = options.key;
+      this.secureContext.cert = options.cert;
     }
     httpServerPool.setHttpServerProcessor(port, processor, false, options);
     this.processor = processor;
@@ -109,6 +119,13 @@ export class HttpProxy extends TunnelProxy {
     };
   }
 }
+
+const authFn = async (req: IncomingMessage) => {
+  const session = sessionManager.getSessionFromReq(req);
+  if (!session) return false;
+  if (!session.isLogin) return false;
+  return true;
+};
 
 class HttpServerPool {
   serverMap = new Map<number, http.Server>();
@@ -191,6 +208,7 @@ class ProxyManager {
     targetPort: number,
     type: 'http' | 'https' = 'http',
     certName?: string,
+    needAuth: boolean = false,
   ) {
     if (this.httpProxies.find(p => p.name === name)) {
       return undefined;
@@ -199,14 +217,18 @@ class ProxyManager {
     if (type === 'https') {
       const certEntity = await certRepository.findOneBy({ name: certName });
       const { cert, key } = certEntity || {};
-      proxy = new HttpProxy(name, port, host, path, targetHost, targetPort, async () => true, {
-        type: 'https',
-        cert,
-        key,
-      });
+      proxy = new HttpProxy(name, port, host, path, targetHost, targetPort,
+        authFn,
+        {
+          type: 'https',
+          cert,
+          key,
+        }
+      );
     } else {
-      proxy = new HttpProxy(name, port, host, path, targetHost, targetPort);
+      proxy = new HttpProxy(name, port, host, path, targetHost, targetPort, authFn);
     }
+    proxy.shouldAuth = needAuth;
     await proxy.start();
     this.httpProxies.push(proxy);
 
@@ -222,6 +244,7 @@ class ProxyManager {
     entity.trafficReceived = 0;
     entity.trafficSent = 0;
     entity.status = 1;
+    entity.needAuth = needAuth;
     proxyRepository.save(entity);
 
     return proxy;
@@ -286,11 +309,12 @@ class ProxyManager {
           ({ cert, key } = certEntity);
         }
       }
-      const proxy = new HttpProxy(name, port, new RegExp(host), new RegExp(path), targetHost, targetPort, () => true, {
+      const proxy = new HttpProxy(name, port, new RegExp(host), new RegExp(path), targetHost, targetPort, authFn, {
         type: entity.type as 'http' | 'https',
         cert,
         key,
       });
+      proxy.shouldAuth = entity.needAuth;
       this.httpProxies.push(proxy);
       proxy.traffic.sent = entity.trafficSent;
       proxy.traffic.received = entity.trafficReceived;

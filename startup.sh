@@ -1,1 +1,1 @@
-pm2 start my_app.js --node-args="--es-module-specifier-resolution=node"  
+pm2 start ./packages/gateway/dist/main.js --node-args="--es-module-specifier-resolution=node"  

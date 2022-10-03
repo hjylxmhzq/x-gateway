@@ -10,10 +10,16 @@ import getDataSource from './data-source';
 import { CertEntity } from './entities/cert';
 import { UserEntity } from './entities/user';
 import { register } from './services/user';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = new Koa();
 
-dotenv.config();
+dotenv.config({
+  path: join(__dirname, '../.env'),
+});
 
 const {
   WEB_CLIENT_PORT = '8100',

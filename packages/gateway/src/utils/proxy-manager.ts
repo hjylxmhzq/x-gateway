@@ -28,8 +28,6 @@ interface HttpConnectProcessor {
   (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer): void;
 }
 
-const proxy = httpProxy.createProxyServer({});
-
 const appDataSource = await getDataSource();
 const proxyRepository = appDataSource.getRepository(ProxyEntity);
 const certRepository = appDataSource.getRepository(CertEntity);
@@ -69,6 +67,7 @@ export class HttpProxy extends TunnelProxy {
         const isAuthed = (this.needAuth ? await authFn(req) : true);
         if (isAuthed) {
           this.requestCount++;
+          const proxy = httpProxy.createProxyServer({});
           proxy.web(req, res, { target: `http://${targetHost}:${targetPort}` });
           req.on('data', (chunk) => {
             this.traffic.sent += chunk.length;

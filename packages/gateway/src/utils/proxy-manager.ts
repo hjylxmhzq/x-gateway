@@ -113,6 +113,7 @@ export class HttpProxy extends TunnelProxy {
   toJSON() {
     return {
       ...this,
+      proxy: {},
       secureContext: {},
       options: {},
       host: this.host.source,

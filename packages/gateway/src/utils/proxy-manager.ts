@@ -38,6 +38,7 @@ export class HttpProxy extends TunnelProxy {
   isDestroyed = false;
   requestCount = 0;
   needAuth = false;
+  proxy = httpProxy.createProxyServer({});
   secureContext = {
     key: '',
     cert: '',
@@ -54,6 +55,11 @@ export class HttpProxy extends TunnelProxy {
     public options: { type: 'http' | 'https', cert?: string | Buffer, key?: string | Buffer } = { type: 'http' }
   ) {
     super(options.type);
+    this.proxy.on('proxyRes', (proxyRes) => {
+      proxyRes.on('data', (chunk) => {
+        this.traffic.received += chunk.length;
+      });
+    });
     const processor: HttpRequestProcessor = async (req, res) => {
       if (this.status !== ProxyStatus.running) {
         return false;
@@ -67,15 +73,9 @@ export class HttpProxy extends TunnelProxy {
         const isAuthed = (this.needAuth ? await authFn(req) : true);
         if (isAuthed) {
           this.requestCount++;
-          const proxy = httpProxy.createProxyServer({});
-          proxy.web(req, res, { target: `http://${targetHost}:${targetPort}` });
+          this.proxy.web(req, res, { target: `http://${targetHost}:${targetPort}` });
           req.on('data', (chunk) => {
             this.traffic.sent += chunk.length;
-          });
-          proxy.on('proxyRes', (proxyRes) => {
-            proxyRes.on('data', (chunk) => {
-              this.traffic.received += chunk.length;
-            });
           });
           return true;
         } else {
@@ -114,6 +114,7 @@ export class HttpProxy extends TunnelProxy {
     return {
       ...this,
       secureContext: {},
+      options: {},
       host: this.host.source,
       path: this.path.source,
     };

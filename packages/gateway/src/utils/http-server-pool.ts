@@ -48,7 +48,7 @@ class HttpServerPool {
     port: number, processor: HttpRequestProcessor, firstOrder = false,
     options: { type: 'http' | 'https', cert?: string | Buffer, key?: string | Buffer } = { type: 'http' }
   ) {
-    const server = options.type === 'http' ? this.getHttpServer(port) : this.getHttpServer(port, 'https', options.cert, options.key);
+    const server = options.type === 'http' ? this.getHttpServer(port, 'http') : this.getHttpServer(port, 'https', options.cert, options.key);
     const processorList = this.serverRequestProcessors.get(server);
     if (processorList) {
       if (firstOrder) {

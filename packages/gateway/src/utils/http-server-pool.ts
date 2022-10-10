@@ -12,7 +12,7 @@ class HttpServerPool {
   constructor() {
 
   }
-  getHttpServer(port: number, type: 'http' | 'https' = 'http', cert?: Buffer | string, key?: Buffer | string): http.Server | https.Server {
+  getHttpServer(port: number, type?: 'http' | 'https', cert?: Buffer | string, key?: Buffer | string): http.Server | https.Server {
     const server = this.serverMap.get(port);
     if ((type === 'http' && server instanceof https.Server)
       || (type === 'https' && server instanceof http.Server)) {
@@ -32,7 +32,7 @@ class HttpServerPool {
     return newServer;
   }
   deleteHttpProcessor(port: number, processor: HttpRequestProcessor) {
-    const server = this.getHttpServer(port, 'http');
+    const server = this.getHttpServer(port);
     const processorList = this.serverRequestProcessors.get(server);
     const idx = processorList?.indexOf(processor);
     if (idx && idx > -1) {

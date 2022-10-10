@@ -29,6 +29,9 @@ router.post('/login', async (ctx, next) => {
           ctx.body = resFac(0, { needToken: true }, 'need token');
         }
       } else {
+        ctx.session.isLogin = true;
+        ctx.session.username = username;
+        ctx.session.isAdmin = user.isAdmin;
         ctx.body = resFac(0, {}, 'success');
       }
     } else {

@@ -53,6 +53,14 @@ class SessionManager {
       }
     }
   }
+
+  authFn = async (req: IncomingMessage) => {
+    const session = sessionManager.getSessionFromReq(req);
+    if (!session) return false;
+    if (!session.isLogin) return false;
+    return true;
+  }
+
   mw() {
     return async (ctx: Koa.Context, next: Koa.Next) => {
       let sessionKey = ctx.cookies.get(SESSION_KEY_NAME);
@@ -70,8 +78,8 @@ export function redirectToLogin(protocol: 'http' | 'https', host: string, path: 
   const hostname = host.split(':')[0];
   const useHttps = getConfig('https') === 'true';
   const webClientPort = useHttps
-  ? parseInt(process.env.WEB_CLIENT_HTTPS_PORT || '8100', 10)
-  : parseInt(process.env.WEB_CLIENT_PORT || '8443', 10);
+    ? parseInt(process.env.WEB_CLIENT_HTTPS_PORT || '8100', 10)
+    : parseInt(process.env.WEB_CLIENT_PORT || '8443', 10);
   const loginProtocol = useHttps ? 'https' : 'http';
   const successRedirect = `${protocol}://${host}${path}${querystring ? '?' + querystring : ''}`;
   const redirectTo = `${loginProtocol}://${hostname}:${webClientPort}/login?redirect=${encodeURIComponent(successRedirect)}`;

@@ -15,6 +15,9 @@ export class UserEntity {
   @Column({ type: 'boolean', default: false })
   needTwoFacAuth: boolean;
 
+  @Column({ default: '' })
+  otpSecret: string;
+
   @Column({ type: 'boolean', default: false })
   isAdmin: boolean;
 

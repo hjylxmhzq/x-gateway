@@ -1,8 +1,8 @@
-import { DeleteUserRequest, GetAllUsersInfoResponse, GetUserInfoResponse, LoginResponse, RegisterRequest } from "@x-gateway/interface";
+import { CreateTotpRequest, DeleteUserRequest, DisableTotpRequest, GetAllUsersInfoResponse, GetUserInfoResponse, LoginResponse, RegisterRequest, CreateTotpResponse, DisableTotpResponse } from "@x-gateway/interface";
 import { post } from "./common";
 
-export async function login(username: string, password: string) {
-  return await post<LoginResponse>('/user/login', { username, password });
+export async function login(username: string, password: string, token: string = '') {
+  return await post<LoginResponse>('/user/login', { username, password, token });
 }
 
 export async function register(params: RegisterRequest) {
@@ -23,4 +23,12 @@ export async function getAllUserInfo() {
 
 export async function deleteUser(params: DeleteUserRequest) {
   return await post<{}>('/user/delete-user', params);
+}
+
+export async function enableTotp(params: CreateTotpRequest) {
+  return await post<CreateTotpResponse>('/user/enable-totp', params);
+}
+
+export async function disableTotp(params: DisableTotpRequest) {
+  return await post<DisableTotpResponse>('/user/disable-totp', params);
 }

@@ -60,3 +60,11 @@ export const createFuzzyTime = (timestamp: number) => {
 export const restoreFuzzyTime = (timestamp: number) => {
   return timestamp * 300 * 1000;
 }
+
+export async function deleteProxyServer(proxyName: string) {
+  const success = await proxyManager.deleteProxy(proxyName);
+  if (success) {
+    await trafficRepository.delete({ proxyName });
+  }
+  return success;
+}

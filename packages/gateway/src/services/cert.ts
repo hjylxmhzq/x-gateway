@@ -1,7 +1,5 @@
-import { IncomingMessage, ServerResponse } from "http";
 import path from "path";
 import { certFileDir, certManager, challengeDir, createLetsencryptCert } from "../utils/cert";
-import { httpServerPool } from "../utils/proxy-manager";
 import fs from 'fs-extra';
 import getDataSource from "../data-source";
 import { CertEntity } from "../entities/cert";

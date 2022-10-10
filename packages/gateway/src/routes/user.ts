@@ -1,6 +1,7 @@
 import Router from '@koa/router';
-import { DeleteUserRequest, DeleteUserRequestValidator, LoginRequest, LoginRequestValidator, RegisterRequest, RegisterRequestValidator } from '@x-gateway/interface';
-import { auth, deleteUser, getAllUsers, getUserInfo, register } from '../services/user';
+import { DeleteUserRequest, DeleteUserRequestValidator, LoginRequest, LoginRequestValidator, RegisterRequest, RegisterRequestValidator, CreateTotpRequest, CreateTotpRequestValidator, DisableTotpRequest, DisableTotpRequestValidator } from '@x-gateway/interface';
+import { totp } from 'otplib';
+import { auth, deleteUser, disableTotp, enableTotp, getAllUsers, getUserInfo, register } from '../services/user';
 import { resFac } from '../utils/response';
 
 const router = new Router({ prefix: '/user' });
@@ -9,14 +10,27 @@ router.post('/login', async (ctx, next) => {
   const body = ctx.request.body as LoginRequest;
   try {
     await LoginRequestValidator.validateAsync(body);
-    const { username, password } = body;
+    const { username, password, token } = body;
     const user = await auth(username, password);
     ctx.type = 'json';
     if (user) {
-      ctx.session.isLogin = true;
-      ctx.session.username = username;
-      ctx.session.isAdmin = user.isAdmin;
-      ctx.body = resFac(0, {}, 'success');
+      if (user.needTwoFacAuth) {
+        if (token) {
+          const valid = totp.check(token, user.otpSecret);
+          if (valid) {
+            ctx.session.isLogin = true;
+            ctx.session.username = username;
+            ctx.session.isAdmin = user.isAdmin;
+            ctx.body = resFac(0, {}, 'success');
+          } else {
+            ctx.body = resFac(1, {}, 'password error');
+          }
+        } else {
+          ctx.body = resFac(0, { needToken: true }, 'need token');
+        }
+      } else {
+        ctx.body = resFac(0, {}, 'success');
+      }
     } else {
       ctx.body = resFac(1, {}, 'password error');
     }
@@ -54,6 +68,34 @@ router.post('/logout', async (ctx, next) => {
     ctx.session.isLogin = false;
     console.log(ctx.session);
     ctx.body = resFac(0, {}, 'success');
+  } catch (e) {
+    ctx.status = 400;
+    ctx.body = resFac(1, {}, 'parameters error', e);
+  }
+  await next();
+});
+
+router.post('/enable-totp', async (ctx, next) => {
+  try {
+    const body = ctx.request.body as CreateTotpRequest;
+    await CreateTotpRequestValidator.validateAsync(body);
+    const { token, secret, username } = body;
+    const success = await enableTotp(username, token, secret);
+    ctx.body = resFac(0, { success }, 'success');
+  } catch (e) {
+    ctx.status = 400;
+    ctx.body = resFac(1, {}, 'parameters error', e);
+  }
+  await next();
+});
+
+router.post('/disable-totp', async (ctx, next) => {
+  try {
+    const body = ctx.request.body as DisableTotpRequest;
+    await DisableTotpRequestValidator.validateAsync(body);
+    const { username } = body;
+    const success = await disableTotp(username);
+    ctx.body = resFac(0, { success }, 'success');
   } catch (e) {
     ctx.status = 400;
     ctx.body = resFac(1, {}, 'parameters error', e);

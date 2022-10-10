@@ -2,9 +2,9 @@ import acme from 'acme-client';
 import path, { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs-extra';
-import { httpServerPool } from './proxy-manager';
 import { IncomingMessage, ServerResponse } from 'http';
 import { logger, stringifyError } from './logger';
+import { httpServerPool } from './http-server-pool';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const certRootDir = join(__dirname, '../../cert');

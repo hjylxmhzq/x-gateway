@@ -1,6 +1,7 @@
 import getDataSource from "../data-source";
 import { UserEntity } from "../entities/user";
 import { sha1 } from "../utils/crypto";
+import { totp } from 'otplib';
 
 const appDataSource = await getDataSource();
 const userRepository = appDataSource.getRepository(UserEntity);
@@ -75,5 +76,32 @@ export async function deleteUser(username: string) {
   if (!deleted.affected) {
     return false;
   }
+  return true;
+}
+
+export async function enableTotp(username: string, token: string, secret: string) {
+  const valided = totp.check(token, secret);
+  const at = totp.generate(secret);
+  if (!valided) {
+    return false;
+  }
+  const user = await userRepository.findOneBy({ name: username });
+  if (!user) {
+    return false;
+  }
+  user.needTwoFacAuth = true;
+  user.otpSecret = secret;
+  await userRepository.save(user);
+  return true;
+}
+
+export async function disableTotp(username: string) {
+  const user = await userRepository.findOneBy({ name: username });
+  if (!user) {
+    return false;
+  }
+  user.needTwoFacAuth = false;
+  user.otpSecret = '';
+  await userRepository.save(user);
   return true;
 }

@@ -1,8 +1,11 @@
 import { Button, Form, FormInstance, Input, message, Modal, Popconfirm, Select, Space, Spin, Switch, Table, Tabs } from 'antd';
 import { GetAllUsersInfoResponse } from '@x-gateway/interface';
-import React, { useEffect, useState } from 'react';
-import { deleteUser, getAllUserInfo, register } from '../../../../apis/user';
+import React, { useEffect, useRef, useState } from 'react';
+import { deleteUser, disableTotp, enableTotp, getAllUserInfo, register } from '../../../../apis/user';
 import { useForm } from 'antd/es/form/Form';
+import { customAlphabet } from 'nanoid'
+import qrCode from 'qrcode';
+import base32Encode from 'base32-encode';
 
 const UserManagementPage: React.FC = () => {
 
@@ -17,6 +20,11 @@ const RunningCertTable: React.FC = () => {
   const [dataSource, setDataSource] = useState<GetAllUsersInfoResponse>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setModalOpen] = useState(false);
+  const [isEnableTotpModalOpen, setEnableTotpModalOpen] = useState(false);
+  const [secret, setSecret] = useState('');
+  const [currentUsername, setCurrentUsername] = useState('');
+  const [isTokenValid, setIsTokenValid] = useState(true);
+  const qrCodeRef = useRef<HTMLCanvasElement>(null);
 
   const reloadDataSource = async (showLoading = false) => {
     setLoading(true);
@@ -28,6 +36,19 @@ const RunningCertTable: React.FC = () => {
   useEffect(() => {
     reloadDataSource();
   }, [])
+
+  useEffect(() => {
+    if (isEnableTotpModalOpen && qrCodeRef.current) {
+      const uint8 = new TextEncoder().encode(secret);
+      const encoded = base32Encode(uint8, 'RFC4648');
+      const url = `otpauth://totp/x-gateway:user@test.com?secret=${encoded}&issuer=x-gateway`
+      qrCode.toCanvas(qrCodeRef.current, url, { width: 250, margin: 2 }, (err) => {
+        if (err) {
+          console.error(err);
+        }
+      });
+    }
+  }, [secret]);
 
   const defaultColumns = [
     {
@@ -71,22 +92,37 @@ const RunningCertTable: React.FC = () => {
     {
       title: '操作',
       render: (_: any, record: GetAllUsersInfoResponse[0]) => {
-        return <Popconfirm okText="确定" cancelText="取消" title="确认删除吗?" onConfirm={async () => {
-          try {
-            setLoading(true);
-            await deleteUser({ name: record.name });
-            await reloadDataSource();
-            setLoading(false);
-            message.info(`已删除用户: ${record.name}`);
-          } catch (e) {
-            setLoading(false);
-          }
-        }}>
-          <Button size='small' danger>删除</Button>
-        </Popconfirm>
+        return <Space>
+          <Popconfirm okText="确定" cancelText="取消" title="确认删除吗?" onConfirm={async () => {
+            try {
+              setLoading(true);
+              await deleteUser({ name: record.name });
+              await reloadDataSource();
+              setLoading(false);
+              message.info(`已删除用户: ${record.name}`);
+            } catch (e) {
+              setLoading(false);
+            }
+          }}>
+            <Button size='small' danger>删除</Button>
+          </Popconfirm>
+          <Switch onChange={(checked) => onTotpChange(checked, record.name)} checkedChildren="TOTP" unCheckedChildren="TOTP" checked={record.needTwoFacAuth} />
+        </Space>
       }
     },
   ];
+
+  const onTotpChange = async (checked: boolean, username: string) => {
+    if (checked) {
+      const secret = customAlphabet('1234567890abcdefghijklnmopqrstuvwxyz', 25)();
+      setSecret(secret);
+      setEnableTotpModalOpen(true);
+      setCurrentUsername(username);
+    } else {
+      await disableTotp({ username });
+      await reloadDataSource();
+    }
+  }
 
   const openModal = () => setModalOpen(true);
 
@@ -95,6 +131,7 @@ const RunningCertTable: React.FC = () => {
   };
 
   const [form] = useForm();
+  const [addTotpForm] = useForm();
 
   return (
     <div>
@@ -122,6 +159,33 @@ const RunningCertTable: React.FC = () => {
         }}
       >
         <AddUserForm form={form} />
+      </Modal>
+      <Modal
+        title="启用两步验证(TOTP)"
+        visible={isEnableTotpModalOpen} onCancel={() => setEnableTotpModalOpen(false)}
+        okText="确定"
+        cancelText="取消"
+        onOk={async () => {
+          try {
+            const token = addTotpForm.getFieldValue('token');
+            const { success } = await enableTotp({ username: currentUsername, token, secret });
+            if (!success) {
+              setIsTokenValid(false);
+            } else {
+              setIsTokenValid(true);
+              setEnableTotpModalOpen(false);
+              await reloadDataSource();
+            }
+          } catch (e) {
+            console.log('validate form error');
+          }
+          closeModal();
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <canvas ref={qrCodeRef}></canvas>
+        </div>
+        <AddTotpForm form={addTotpForm} valid={isTokenValid} />
       </Modal>
     </div >
   );
@@ -170,6 +234,28 @@ const AddUserForm = (props: { form: FormInstance }) => {
         <Select.Option value={true}>是</Select.Option>
         <Select.Option value={false}>否</Select.Option>
       </Select>
+    </Form.Item>
+  </Form>
+}
+
+
+const AddTotpForm = (props: { form: FormInstance, valid: boolean }) => {
+
+  return <Form
+    form={props.form}
+    name="basic"
+    initialValues={{ remember: true }}
+    autoComplete="off"
+  >
+    <Form.Item
+      labelCol={{ span: 5 }}
+      label="验证Token"
+      name="token"
+      hasFeedback
+      help={props.valid ? '' : 'Token错误'}
+      validateStatus={props.valid ? 'success' : 'error'}
+    >
+      <Input placeholder='验证Token' />
     </Form.Item>
   </Form>
 }

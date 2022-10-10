@@ -13,6 +13,7 @@ import { UserOutlined } from '@ant-design/icons';
 import { Avatar } from 'antd';
 import { GetUserInfoResponse } from '@x-gateway/interface/lib';
 import { getUserInfo, logout } from '../../apis/user';
+import { useUserInfo } from '../../hooks/user';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -41,7 +42,7 @@ const items: MenuItem[] = [
 
 const Dashboard: React.FC = () => {
 
-  const [userInfo, setUserInfo] = useState<GetUserInfoResponse>({ name: '', email: '' });
+  const userInfo = useUserInfo();
   const userInfoPopover = <div className={style['user-info-popover']}>
     <div>已登陆账户：<strong>{userInfo.name}</strong></div>
     <div>Email: {userInfo.email}</div>
@@ -51,13 +52,6 @@ const Dashboard: React.FC = () => {
       window.location.href = '/login';
     }}>退出登陆</Button>
   </div>
-
-  useEffect(() => {
-    (async () => {
-      const userInfo = await getUserInfo();
-      setUserInfo(userInfo);
-    })()
-  }, []);
 
   const location = useLocation();
   return (

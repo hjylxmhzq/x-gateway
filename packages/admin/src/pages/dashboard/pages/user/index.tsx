@@ -6,6 +6,7 @@ import { useForm } from 'antd/es/form/Form';
 import { customAlphabet } from 'nanoid'
 import qrCode from 'qrcode';
 import base32Encode from 'base32-encode';
+import { useUserInfo } from '../../../../hooks/user';
 
 const UserManagementPage: React.FC = () => {
 
@@ -25,6 +26,7 @@ const RunningCertTable: React.FC = () => {
   const [currentUsername, setCurrentUsername] = useState('');
   const [isTokenValid, setIsTokenValid] = useState(true);
   const qrCodeRef = useRef<HTMLCanvasElement>(null);
+  const userInfo = useUserInfo();
 
   const reloadDataSource = async (showLoading = false) => {
     setLoading(true);
@@ -41,7 +43,8 @@ const RunningCertTable: React.FC = () => {
     if (isEnableTotpModalOpen && qrCodeRef.current) {
       const uint8 = new TextEncoder().encode(secret);
       const encoded = base32Encode(uint8, 'RFC4648');
-      const url = `otpauth://totp/x-gateway:user@test.com?secret=${encoded}&issuer=x-gateway`
+      const { name, email } = userInfo;
+      const url = `otpauth://totp/${name}:${email}?secret=${encoded}&issuer=x-gateway`
       qrCode.toCanvas(qrCodeRef.current, url, { width: 250, margin: 2 }, (err) => {
         if (err) {
           console.error(err);

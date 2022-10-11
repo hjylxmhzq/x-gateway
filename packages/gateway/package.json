@@ -49,6 +49,7 @@
     "dotenv": "^16.0.2",
     "finalhandler": "^1.2.0",
     "fs-extra": "^10.1.0",
+    "geoip-lite": "^1.4.6",
     "http-proxy": "^1.18.1",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",

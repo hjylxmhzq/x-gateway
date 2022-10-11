@@ -48,16 +48,16 @@ const entity = await certRepository.findOneBy({ useForWebClient: 1 });
 
 const defaltSecureContext: { key: string | Buffer; cert: string | Buffer } = { key: '', cert: '' };
 
-function SNICallback(hostname: string, cb: (err: Error | null, ctx?: SecureContext) => void) {
-  const proxies = proxyManager.httpProxies;
-  const proxy = proxies.find((p) => {
-    if (p.type === 'https' && p.host.test(hostname)) {
+async function SNICallback(hostname: string, cb: (err: Error | null, ctx?: SecureContext) => void) {
+  const certs = await certRepository.findBy({ useForWebClient: 1 });
+  const cert = certs.find((p) => {
+    if (p.domain === hostname) {
       return true;
     }
     return false;
   });
-  if (proxy) {
-    cb(null, createSecureContext(proxy.secureContext));
+  if (cert) {
+    cb(null, createSecureContext({ cert: cert.cert, key: cert.key }));
     return;
   }
   if (defaltSecureContext.cert && defaltSecureContext.key) {

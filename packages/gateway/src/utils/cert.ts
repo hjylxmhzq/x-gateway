@@ -5,6 +5,8 @@ import fs from 'fs-extra';
 import { IncomingMessage, ServerResponse } from 'http';
 import { logger, stringifyError } from './logger';
 import { httpServerPool } from './http-server-pool';
+import getDataSource from '../data-source';
+import { CertEntity } from '../entities/cert';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const certRootDir = join(__dirname, '../../cert');
@@ -13,6 +15,9 @@ export const certFileDir = join(certRootDir, 'domain');
 
 fs.ensureDirSync(challengeDir);
 fs.ensureDirSync(certFileDir);
+
+const appDataSource = await getDataSource();
+const certRepository = appDataSource.getRepository(CertEntity);
 
 export async function createLetsencryptCert(domain: string, logger: (msg: string) => void = () => { }, onFinished: () => Promise<any>) {
   acme.setLogger(logger);
@@ -102,8 +107,28 @@ export async function createLetsencryptCert(domain: string, logger: (msg: string
   }
 
   logger('----- FINISH -----');
+  certCache.clear();
 
   return { csr, privateKey: key, cert };
+}
+
+const certCache = new Map<string, { key: string | Buffer, cert: string | Buffer }>();
+
+export async function getCertByDomain(domain: string, onlyForWebClient = false) {
+  const cert = certCache.get(domain);
+  if (cert) {
+    return cert;
+  }
+  const where = onlyForWebClient ? { domain, useForWebClient: 1 } : { domain };
+  const certEntity = await certRepository.findOneBy(where);
+  if (certEntity) {
+    const newCert = {
+      key: certEntity.key,
+      cert: certEntity.cert,
+    };
+    certCache.set(domain, newCert);
+    return newCert;
+  }
 }
 
 interface RunningCertInstance {
@@ -121,7 +146,7 @@ interface RunningCertInstance {
 class CertManager {
   running: RunningCertInstance[] = [];
   async addCert(name: string, domain: string, createdBy: string, onSuccess = async (instance: RunningCertInstance) => undefined) {
-    
+
     let instance: RunningCertInstance = {
       name,
       log: 'start request certification...\n',

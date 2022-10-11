@@ -15,6 +15,7 @@ import { fileURLToPath } from 'url';
 import { setConfig } from './utils/config';
 import { createSecureContext, SecureContext } from 'node:tls';
 import { proxyManager } from './utils/proxy-manager';
+import { getCertByDomain } from './utils/cert';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -49,13 +50,7 @@ const entity = await certRepository.findOneBy({ useForWebClient: 1 });
 const defaltSecureContext: { key: string | Buffer; cert: string | Buffer } = { key: '', cert: '' };
 
 async function SNICallback(hostname: string, cb: (err: Error | null, ctx?: SecureContext) => void) {
-  const certs = await certRepository.findBy({ useForWebClient: 1 });
-  const cert = certs.find((p) => {
-    if (p.domain === hostname) {
-      return true;
-    }
-    return false;
-  });
+  const cert = await getCertByDomain(hostname, true);
   if (cert) {
     cb(null, createSecureContext({ cert: cert.cert, key: cert.key }));
     return;

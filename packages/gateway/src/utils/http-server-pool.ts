@@ -1,6 +1,8 @@
 import http from 'node:http';
 import https from 'node:https';
 import finalhandler from 'finalhandler';
+import { createSecureContext, SecureContext } from 'node:tls';
+import { getCertByDomain } from './cert';
 
 export interface HttpRequestProcessor {
   (req: http.IncomingMessage, res: http.ServerResponse): Promise<boolean> | boolean;
@@ -12,11 +14,19 @@ class HttpServerPool {
   constructor() {
 
   }
+  async SNICallback(hostname: string, cb: (err: Error | null, ctx?: SecureContext) => void) {
+    const cert = await getCertByDomain(hostname, true);
+    if (cert) {
+      cb(null, createSecureContext({ cert: cert.cert, key: cert.key }));
+      return;
+    }
+    cb(new Error('cannot find proper secure context'));
+  }
   getHttpServer(port: number, type?: 'http' | 'https', cert?: Buffer | string, key?: Buffer | string): http.Server | https.Server {
     const server = this.serverMap.get(port);
     if ((type === 'http' && server instanceof https.Server)
       || (type === 'https' && server instanceof http.Server)) {
-        throw new Error(`port ${port} is already listening as ${type} server`);
+      throw new Error(`port ${port} is already listening as ${type} server`);
     }
     if (server) {
       return server;
@@ -25,7 +35,7 @@ class HttpServerPool {
     if (type === 'http') {
       newServer = http.createServer();
     } else {
-      newServer = https.createServer({ key, cert });
+      newServer = https.createServer({ SNICallback: this.SNICallback });
     }
     this.serverMap.set(port, newServer);
     newServer.listen(port);

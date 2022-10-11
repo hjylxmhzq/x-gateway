@@ -21,6 +21,11 @@ export const setCertForWebClient = async (params: SetCertForWebClientRequest) =>
   return result;
 }
 
+export const disableCertForWebClient = async (params: SetCertForWebClientRequest) => {
+  const result = await post<SetCertForWebClientResponse>('/cert/disable-cert-for-webclient', params);
+  return result;
+}
+
 export const recreateCert = async (params: RecreateCertRequest) => {
   const result = await post<SetCertForWebClientResponse>('/cert/recreate-cert', params);
   return result;

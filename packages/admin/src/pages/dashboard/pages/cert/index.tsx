@@ -1,7 +1,7 @@
 import { Button, Descriptions, Form, Input, message, Modal, Popconfirm, Space, Spin, Table, Tabs } from 'antd';
 import { DeployedCert, RunningCertInstance } from '@x-gateway/interface';
 import React, { useEffect, useState } from 'react';
-import { requestNewCert, getRunningCertProcess, getAllDeployedCerts, setCertForWebClient, recreateCert, deleteCert } from '../../../../apis/cert-management';
+import { requestNewCert, getRunningCertProcess, getAllDeployedCerts, setCertForWebClient, recreateCert, deleteCert, disableCertForWebClient } from '../../../../apis/cert-management';
 
 const CertManagementPage: React.FC = () => {
 
@@ -128,9 +128,15 @@ const RunningCertTable: React.FC = () => {
       render: (_: any, record: DeployedCert) => {
         return <Space>
           <Button size='small' onClick={async () => {
-            await setCertForWebClient({ name: record.name });
+            if (record.useForWebClient) {
+              await disableCertForWebClient({name: record.name});
+            } else {
+              await setCertForWebClient({ name: record.name });
+            }
             await reloadDeployedDataSource();
-          }}>用于控制台</Button>
+          }}>
+            {record.useForWebClient ? '取消用于控制台' : '用于控制台'}
+          </Button>
           <Button size='small' onClick={async () => {
             await recreateCert({ name: record.name });
             setCurrentTab('running');

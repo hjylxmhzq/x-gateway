@@ -1,4 +1,5 @@
-import { Button, Form, FormInstance, Input, message, Modal, Popconfirm, Select, Space, Spin, Switch, Table, Tabs } from 'antd';
+import { Button, Form, FormInstance, Input, message, Modal, Popconfirm, Select, Space, Spin, Switch, Table, Tabs, Tooltip } from 'antd';
+import { QuestionCircleOutlined } from '@ant-design/icons'
 import { GetAllUsersInfoResponse } from '@x-gateway/interface';
 import React, { useEffect, useRef, useState } from 'react';
 import { deleteUser, disableTotp, enableTotp, getAllUserInfo, register } from '../../../../apis/user';
@@ -185,8 +186,35 @@ const RunningCertTable: React.FC = () => {
           closeModal();
         }}
       >
+        <div>
+          <Space>
+            第一步：扫描二维码添加TOTP账户
+            <Tooltip title={
+              <div>
+                许多客户端支持TOTP验证码，例如Google Authenticator、Microsoft Authenticator等
+                <br />
+                <a target="_blank" rel="noreferrer" href="https://www.microsoft.com/en-us/security/mobile-authenticator-app">查看更多</a>
+              </div>
+            }>
+              <QuestionCircleOutlined style={{ color: '#999' }} />
+            </Tooltip>
+          </Space>
+        </div>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <canvas ref={qrCodeRef}></canvas>
+        </div>
+        <div style={{ marginBottom: 10 }}>
+          <Space>
+            第二步：验证TOTP验证码
+            <Tooltip title={
+              <div>
+                <a target="_blank" rel="noreferrer" href="https://zh.wikipedia.org/zh-cn/基于时间的一次性密码算法">TOTP</a>
+                (Time-based One-Time Password)是一种基于时间的一次性密码算法，它的验证码会随时间发生变化
+              </div>
+            }>
+              <QuestionCircleOutlined style={{ color: '#999' }} />
+            </Tooltip>
+          </Space>
         </div>
         <AddTotpForm form={addTotpForm} valid={isTokenValid} />
       </Modal>
@@ -252,7 +280,6 @@ const AddTotpForm = (props: { form: FormInstance, valid: boolean }) => {
   >
     <Form.Item
       labelCol={{ span: 5 }}
-      label="验证Token"
       name="token"
       hasFeedback
       help={props.valid ? '' : 'Token错误'}

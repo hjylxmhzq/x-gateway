@@ -1,5 +1,5 @@
 import Router from '@koa/router';
-import { createCert, deleteCert, getAllCerts, getRunningProcess, reCreateCert, setCertForWebClient } from '../services/cert';
+import { createCert, deleteCert, disableCertForWebClient, getAllCerts, getRunningProcess, reCreateCert, setCertForWebClient } from '../services/cert';
 import { resFac } from '../utils/response';
 import { RecreateCertRequest, RecreateCertRequestValidator, RequestNewCertRequestValidator, SetCertForWebClientRequestValidator, SetCertForWebClientRequest, RequestNewCertRequest, DeleteCertRequest, DeleteCertRequestValidator } from '@x-gateway/interface';
 
@@ -76,6 +76,21 @@ router.post('/set-cert-for-webclient', async (ctx, next) => {
   try {
     await SetCertForWebClientRequestValidator.validateAsync(body);
     await setCertForWebClient(body.name);
+    const certs = await getAllCerts();
+    ctx.body = resFac(0, certs, 'success');
+  } catch (e) {
+    ctx.status = 400;
+    ctx.body = resFac(1, {}, 'parameters error', e);
+  }
+
+  await next();
+});
+
+router.post('/disable-cert-for-webclient', async (ctx, next) => {
+  const body = ctx.request.body as SetCertForWebClientRequest;
+  try {
+    await SetCertForWebClientRequestValidator.validateAsync(body);
+    await disableCertForWebClient(body.name);
     const certs = await getAllCerts();
     ctx.body = resFac(0, certs, 'success');
   } catch (e) {

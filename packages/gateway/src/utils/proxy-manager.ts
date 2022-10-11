@@ -107,6 +107,7 @@ export class HttpProxy extends TunnelProxy {
   }
   destroy() {
     this.isDestroyed = true;
+    this.proxy.close();
     httpServerPool.deleteHttpProcessor(this.port, this.processor);
   }
   toJSON() {

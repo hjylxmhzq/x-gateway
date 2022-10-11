@@ -45,14 +45,13 @@ class HttpServerPool {
     const server = this.getHttpServer(port);
     const processorList = this.serverRequestProcessors.get(server);
     const idx = processorList?.indexOf(processor);
-    if (idx && idx > -1) {
-      processorList?.splice(idx, 1);
+    if (idx === -1 || idx === undefined) {
+      throw new Error(`can not find server listening on port ${port}`);
     }
-    if (processorList && processorList.length === 0) {
-      server.close();
-      this.serverRequestProcessors.delete(server);
-      this.serverMap.delete(port);
-    }
+    processorList?.splice(idx, 1);
+    server.close();
+    this.serverRequestProcessors.delete(server);
+    this.serverMap.delete(port);
   }
   setHttpServerProcessor(
     port: number, processor: HttpRequestProcessor, firstOrder = false,

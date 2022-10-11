@@ -96,8 +96,22 @@ export async function setCertForWebClient(name: string) {
   const entity = await certRepository.findOneBy({ name });
 
   if (entity) {
-    await certRepository.update({}, { useForWebClient: 0 });
     entity.useForWebClient = 1;
+    await certRepository.save(entity);
+    setClientSecureContect(entity.key, entity.cert);
+    setConfig('https', 'true');
+  }
+
+}
+
+export async function disableCertForWebClient(name: string) {
+
+  const appDataSource = await getDataSource();
+  const certRepository = appDataSource.getRepository(CertEntity);
+  const entity = await certRepository.findOneBy({ name });
+
+  if (entity) {
+    entity.useForWebClient = 0;
     await certRepository.save(entity);
     setClientSecureContect(entity.key, entity.cert);
     setConfig('https', 'true');

@@ -19,6 +19,7 @@
     "@types/cookie": "^0.5.1",
     "@types/finalhandler": "^1.2.0",
     "@types/fs-extra": "^9.0.13",
+    "@types/geoip-lite": "^1.4.1",
     "@types/koa": "^2.13.5",
     "@types/koa-bodyparser": "^4.3.7",
     "@types/koa-static": "^4.0.2",

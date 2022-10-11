@@ -72,7 +72,7 @@ export class HttpProxy extends TunnelProxy {
         if (isAuthed) {
           this.requestCount++;
           const target = targetHost.startsWith('http') ? targetHost : `http://${targetHost}`;
-          this.proxy.web(req, res, { target: `http://${target}:${targetPort}`, xfwd: true, changeOrigin: true });
+          this.proxy.web(req, res, { target: `${target}:${targetPort}`, xfwd: true, changeOrigin: true });
           req.on('data', (chunk) => {
             this.traffic.sent += chunk.length;
           });

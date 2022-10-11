@@ -144,7 +144,6 @@ class ProxyManager {
     let proxy;
     if (type === 'https') {
       const certEntity = await certRepository.findOneBy({ name: certName });
-      logger.info('add https proxy' + certEntity + certEntity.name + certName);
       if (!certEntity) throw new Error(`no cert with name ${certName}`);
       const { cert, key } = certEntity || {};
       proxy = new HttpProxy(name, port, host, path, targetHost, targetPort,

@@ -7,7 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function serveStatic() {
   return (async (ctx: Koa.Context, next: Koa.Next) => {
-    return await koaStatic(join(__dirname, '../../static'))(ctx, next);
+    return await koaStatic(join(__dirname, '../../static'), { maxAge: 3600 * 1000 })(ctx, next);
   });
 }
 

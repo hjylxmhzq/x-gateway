@@ -8,6 +8,7 @@ import sessionManager, { redirectToLogin } from './session';
 import { CertEntity } from '../entities/cert';
 import { HttpRequestProcessor, httpServerPool } from './http-server-pool';
 import { logger } from './logger';
+import { domainMatch } from './common';
 
 export type ProxyType = 'http' | 'https';
 
@@ -46,7 +47,7 @@ export class HttpProxy extends TunnelProxy {
   constructor(
     public name: string,
     public port: number,
-    public host: RegExp,
+    public host: string,
     public path: RegExp,
     public targetHost: string,
     public targetPort: number,
@@ -66,7 +67,7 @@ export class HttpProxy extends TunnelProxy {
       const reqPath = req.url;
       if (req.headers.host && reqPath) {
         const [hostname] = req.headers.host.split(':');
-        if (!hostname || !host.test(hostname) || !path.test(reqPath)) {
+        if (!hostname || !domainMatch(hostname, host) || !path.test(reqPath)) {
           return false;
         }
         const isAuthed = (this.needAuth ? await authFn(req) : true);
@@ -117,7 +118,7 @@ export class HttpProxy extends TunnelProxy {
       proxy: {},
       secureContext: {},
       options: {},
-      host: this.host.source,
+      host: this.host,
       path: this.path.source,
     };
   }
@@ -130,7 +131,7 @@ class ProxyManager {
   async addHttpProxy(
     name: string,
     port: number,
-    host: RegExp,
+    host: string,
     path: RegExp,
     targetHost: string,
     targetPort: number,
@@ -163,7 +164,7 @@ class ProxyManager {
 
     const entity = new ProxyEntity();
     entity.name = name;
-    entity.host = host.source;
+    entity.host = host;
     entity.port = port;
     entity.type = type;
     entity.certName = certName || '';
@@ -238,7 +239,7 @@ class ProxyManager {
           ({ cert, key } = certEntity);
         }
       }
-      const proxy = new HttpProxy(name, port, new RegExp(host), new RegExp(path), targetHost, targetPort, sessionManager.authFn, {
+      const proxy = new HttpProxy(name, port, host, new RegExp(path), targetHost, targetPort, sessionManager.authFn, {
         type: entity.type as 'http' | 'https',
         cert,
         key,

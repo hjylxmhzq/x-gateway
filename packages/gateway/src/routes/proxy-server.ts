@@ -23,7 +23,7 @@ router.post('/add-proxy', async (ctx, next) => {
     const proxy = await proxyManager.addHttpProxy(
       body.name,
       body.port,
-      new RegExp(body.host),
+      body.host,
       new RegExp(body.path),
       body.proxyHost,
       body.proxyPort,

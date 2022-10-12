@@ -324,6 +324,7 @@ const { Option } = Select;
 
 const AddProxyForm = (props: { form: FormInstance }) => {
   const [count, forceUpdate] = useState(0);
+  const [isHostChanged, setHostChanged] = useState(false);
   const [certsDomains, setCertDomains] = useState<DeployedCert[]>([]);
 
   const reloadCertDomain = async () => {
@@ -363,7 +364,13 @@ const AddProxyForm = (props: { form: FormInstance }) => {
       name="name"
       rules={[{ required: true, message: '请输入规则名称' }]}
     >
-      <Input placeholder='代理规则名称' />
+      <Input onChange={(e) => {
+        const value  = e.target.value;
+        if (!isHostChanged) {
+          const currentDomain = window.location.hostname;
+          props.form.setFieldValue('host', `${value}.${currentDomain}`);
+        }
+      }} placeholder='代理规则名称' />
     </Form.Item>
     {
       props.form.getFieldValue('proxyProtocol') === 'https' ? <Form.Item
@@ -388,11 +395,11 @@ const AddProxyForm = (props: { form: FormInstance }) => {
     <Form.Item
       labelCol={{ span: 5 }}
       label="主机(host)"
-      tooltip="使用HTTPS协议时需要先在SSL证书管理页面添加证书"
+      tooltip="可使用*通配符，如*.example.com"
       name="host"
       rules={[{ required: true, message: '输入需要匹配的规则' }]}
     >
-      <Input placeholder='输入需要匹配的主机名(正则表达式)' />
+      <Input onChange={() => setHostChanged(true)} placeholder='输入需要匹配的主机名' />
     </Form.Item>
     <Form.Item
       labelCol={{ span: 5 }}

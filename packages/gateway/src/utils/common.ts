@@ -13,3 +13,19 @@ export function setSafeInterval(fn: () => Promise<any>, time: number) {
 export function clearSafeInterval(timer: NodeJS.Timeout) {
   clearTimeout(timer);
 }
+
+export function domainMatch(domain: string, pattern: string) {
+  pattern = pattern.trim();
+  domain = domain.trim();
+  if (pattern === domain) {
+    return true;
+  }
+  if (pattern.startsWith('*.')) {
+    const exactPattern = pattern.split('.').slice(1).join('.');
+    const exactDomain = domain.split('.').slice(1).join('.');
+    if (exactDomain === exactPattern) {
+      return true;
+    }
+  }
+  return false;
+}

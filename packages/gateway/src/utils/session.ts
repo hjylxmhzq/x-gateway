@@ -12,7 +12,7 @@ declare module 'koa' {
   }
 }
 
-type Session = ReturnType<typeof createDefaultSession>;
+export type Session = ReturnType<typeof createDefaultSession>;
 
 const createDefaultSession = () => {
   return {

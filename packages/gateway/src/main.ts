@@ -16,6 +16,7 @@ import { setConfig } from './utils/config';
 import { createSecureContext, SecureContext } from 'node:tls';
 import { proxyManager } from './utils/proxy-manager';
 import { getCertByDomain } from './utils/cert';
+import { onUpgrade } from './utils/websocket';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -40,6 +41,7 @@ process.on('uncaughtException', function (err) {
 });
 
 const httpServer = http.createServer(app.callback());
+httpServer.on('upgrade', onUpgrade);
 httpServer.listen(parseInt(WEB_CLIENT_PORT, 10), WEB_CLIENT_HOST);
 
 const appDataSource = await getDataSource();
@@ -63,6 +65,7 @@ async function SNICallback(hostname: string, cb: (err: Error | null, ctx?: Secur
 }
 
 const httpsServer = https.createServer({ SNICallback }, app.callback());
+httpsServer.on('upgrade', onUpgrade);
 httpsServer.listen(parseInt(WEB_CLIENT_HTTPS_PORT, 10), WEB_CLIENT_HOST);
 
 if (entity) {

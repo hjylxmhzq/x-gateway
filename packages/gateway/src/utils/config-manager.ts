@@ -3,8 +3,11 @@ import { ConfigEntity } from "../entities/config";
 import { logger } from "./logger";
 
 const defaultConfig = {
-  enableShell: false,
+  enableShell: { value: false, desc: '启用shell' },
+  trafficRecordInterval: { value: 300, desc: '流量记录间隔' },
 };
+
+type configKeys = keyof typeof defaultConfig;
 
 const appDataSource = await getDataSource();
 const configRepository = appDataSource.getRepository(ConfigEntity);
@@ -15,10 +18,14 @@ async function initConfig() {
     if (!configEntity) {
       const newConfig = new ConfigEntity();
       newConfig.name = name;
-      newConfig.value = JSON.stringify({ value });
+      newConfig.value = JSON.stringify(value);
       await configRepository.save(newConfig);
     } else {
-      defaultConfig[name as keyof typeof defaultConfig] = JSON.parse(configEntity.value).value;
+      if (defaultConfig[name as configKeys].desc !== value.desc) {
+        configEntity.desc = value.desc;
+        await configRepository.save(configEntity);
+      }
+      defaultConfig[name as configKeys] = JSON.parse(configEntity.value);
     }
   }
 }

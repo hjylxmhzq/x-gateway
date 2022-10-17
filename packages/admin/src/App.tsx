@@ -8,12 +8,8 @@ import LogBrowser from './pages/dashboard/pages/log-browser';
 import TrafficHistoryPage from './pages/dashboard/pages/traffic';
 import UserManagementPage from './pages/dashboard/pages/user';
 import Login from './pages/login';
-import { getWebSocket } from './utils/websocket';
 
 function App() {
-  useEffect(() => {
-    getWebSocket();
-  }, []);
   return (
     <div className="App">
       <Routes>

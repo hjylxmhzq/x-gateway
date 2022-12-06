@@ -1,8 +1,14 @@
+import { logger } from "./logger";
+
 export function setSafeInterval(fn: () => Promise<any>, time: number) {
   let timer: NodeJS.Timeout | undefined;
   function helper() {
     timer = setTimeout(async () => {
-      await fn();
+      try {
+        await fn();
+      } catch (e: any) {
+        logger.error(e.message);
+      }
       helper();
     }, time);
   }

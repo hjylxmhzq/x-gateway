@@ -3,14 +3,20 @@ import https from 'node:https';
 import finalhandler from 'finalhandler';
 import { createSecureContext, SecureContext } from 'node:tls';
 import { getCertByDomain } from './cert';
+import internal from 'node:stream';
 
 export interface HttpRequestProcessor {
   (req: http.IncomingMessage, res: http.ServerResponse): Promise<boolean> | boolean;
 }
 
+export interface HttpUpgradeProcessor {
+  (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer): Promise<boolean> | boolean;
+}
+
 class HttpServerPool {
   serverMap = new Map<number, http.Server>();
   serverRequestProcessors = new WeakMap<http.Server, HttpRequestProcessor[]>();
+  serverUpgradeProcessors = new WeakMap<http.Server, HttpUpgradeProcessor[]>();
   constructor() {
 
   }
@@ -49,9 +55,50 @@ class HttpServerPool {
       throw new Error(`can not find server listening on port ${port}`);
     }
     processorList?.splice(idx, 1);
-    server.close();
-    this.serverRequestProcessors.delete(server);
-    this.serverMap.delete(port);
+    if (!processorList?.length) {
+      this.deleteAllUpgradeProcessor(port);
+      server.close();
+      this.serverRequestProcessors.delete(server);
+      this.serverMap.delete(port);
+    }
+  }
+  deleteAllUpgradeProcessor(port: number) {
+    const server = this.getHttpServer(port);
+    const processorList = this.serverUpgradeProcessors.get(server);
+    if (processorList) {
+      processorList.length = 0;
+    }
+  }
+  deleteUpgradeProcessor(port: number, processor: HttpUpgradeProcessor) {
+    const server = this.getHttpServer(port);
+    const processorList = this.serverUpgradeProcessors.get(server);
+    const idx = processorList?.indexOf(processor);
+    if (idx === -1 || idx === undefined) {
+      throw new Error(`can not find server listening on port ${port}`);
+    }
+    processorList?.splice(idx, 1);
+  }
+  setHttpUpgradeProcessor(port: number, processor: HttpUpgradeProcessor) {
+    const server = this.getHttpServer(port);
+    if (!server) {
+      throw new Error(`no server listening on port ${port}`);
+    }
+    const processorList = this.serverUpgradeProcessors.get(server);
+    if (processorList) {
+      processorList.push(processor);
+      return;
+    }
+    const newProcessorList: HttpUpgradeProcessor[] = [processor];
+    this.serverUpgradeProcessors.set(server, newProcessorList);
+    server.on('upgrade', async (req, socket, head) => {
+      let isProcessed = false;
+      for (let processor of newProcessorList) {
+        isProcessed = await processor(req, socket, head);
+        if (isProcessed) {
+          break;
+        }
+      }
+    });
   }
   setHttpServerProcessor(
     port: number, processor: HttpRequestProcessor, firstOrder = false,

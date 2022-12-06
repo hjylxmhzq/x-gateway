@@ -20,6 +20,7 @@ const paths = require('./paths');
 const modules = require('./modules');
 const getClientEnvironment = require('./env');
 const ModuleNotFoundPlugin = require('react-dev-utils/ModuleNotFoundPlugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const ForkTsCheckerWebpackPlugin =
   process.env.TSC_COMPILE_ON_ERROR === 'true'
     ? require('react-dev-utils/ForkTsCheckerWarningWebpackPlugin')
@@ -249,6 +250,28 @@ module.exports = function (webpackEnv) {
       level: 'none',
     },
     optimization: {
+      // splitChunks: {
+      //   chunks: 'all',
+      //   minSize: 20000,
+      //   maxSize: 1000000,
+      //   minRemainingSize: 0,
+      //   minChunks: 1,
+      //   maxAsyncRequests: 10,
+      //   maxInitialRequests: 10,
+      //   enforceSizeThreshold: 1000000,
+      //   cacheGroups: {
+      //     defaultVendors: {
+      //       test: /[\\/]node_modules[\\/]/,
+      //       priority: -10,
+      //       reuseExistingChunk: true,
+      //     },
+      //     default: {
+      //       minChunks: 2,
+      //       priority: -20,
+      //       reuseExistingChunk: true,
+      //     },
+      //   },
+      // },
       minimize: isEnvProduction,
       minimizer: [
         // This is only used in production mode
@@ -660,6 +683,12 @@ module.exports = function (webpackEnv) {
       // during a production build.
       // Otherwise React will be compiled in the very slow development mode.
       new webpack.DefinePlugin(env.stringified),
+      isEnvProduction &&
+      new BundleAnalyzerPlugin({
+        analyzerMode: 'static',
+        reportFilename: path.join(__dirname, '../report.html'),
+        openAnalyzer: false,
+      }),
       // Experimental hot reloading for React .
       // https://github.com/facebook/react/tree/main/packages/react-refresh
       isEnvDevelopment &&

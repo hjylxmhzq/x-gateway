@@ -1,4 +1,4 @@
-import { WebSocketServer, WebSocket } from 'ws';
+import WebSocket, { type WebSocketServer } from 'ws';
 import sessionManager, { type Session } from './session';
 import { setSafeInterval } from './common';
 import { IncomingMessage } from 'node:http';
@@ -6,7 +6,7 @@ import internal from 'node:stream';
 import { logger } from './logger';
 import requestIp from 'request-ip';
 
-const wss = new WebSocketServer({ noServer: true });
+const wss = new WebSocket.WebSocketServer({ noServer: true });
 
 export async function onUpgrade(req: IncomingMessage, socket: internal.Duplex, head: Buffer) {
 

@@ -6,7 +6,7 @@ import { ProxyEntity } from '../entities/proxy';
 import getDataSource from '../data-source';
 import sessionManager, { redirectToLogin } from './session';
 import { CertEntity } from '../entities/cert';
-import { HttpRequestProcessor, httpServerPool } from './http-server-pool';
+import { HttpRequestProcessor, httpServerPool, HttpUpgradeProcessor } from './http-server-pool';
 import { logger } from './logger';
 import { domainMatch } from './common';
 
@@ -95,6 +95,26 @@ export class HttpProxy extends TunnelProxy {
       this.secureContext.cert = options.cert;
     }
     httpServerPool.setHttpServerProcessor(port, processor, false, options);
+    const upgradeProcessor: HttpUpgradeProcessor = async (req, socket, head) => {
+      if (this.status !== ProxyStatus.running) {
+        return false;
+      }
+      const reqPath = req.url;
+      if (req.headers.host && reqPath) {
+        const [hostname] = req.headers.host.split(':');
+        if (!hostname || !domainMatch(hostname, host) || !path.test(reqPath)) {
+          return false;
+        }
+        const isAuthed = (this.needAuth ? await authFn(req) : true);
+        if (isAuthed) {
+          const target = targetHost.startsWith('http') ? targetHost.replace('http', 'ws') : `ws://${targetHost}`;
+          this.proxy.ws(req, socket, head, { target });
+          return true;
+        }
+      }
+      return false;
+    };
+    httpServerPool.setHttpUpgradeProcessor(port, upgradeProcessor);
     this.processor = processor;
   }
   async start() {

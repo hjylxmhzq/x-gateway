@@ -24,7 +24,7 @@ export function build () {
 let child = undefined;
 
 function startServer(cb) {
-  child = spawn('node', ['--es-module-specifier-resolution=node', './dist/main.js'], { stdio: 'inherit' });
+  child = spawn('node', ['--experimental-loader', './nodejs/loader.js', './dist/main.js'], { stdio: 'inherit' });
   cb();
 }
 

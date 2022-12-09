@@ -131,7 +131,7 @@ export async function getCertByDomain(domain: string, onlyForWebClient = false) 
   }
 }
 
-interface RunningCertInstance {
+export interface RunningCertInstance {
   name: string;
   log: string;
   domain: string;

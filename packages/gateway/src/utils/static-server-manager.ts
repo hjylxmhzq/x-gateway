@@ -7,7 +7,7 @@ import { StaticServerEntity } from "../entities/static-server";
 import { HttpRequestProcessor, httpServerPool } from "./http-server-pool";
 import sessionManager, { redirectToLogin } from "./session";
 
-interface BaseStaticServerOption {
+export interface BaseStaticServerOption {
   name: string,
   port: number,
   host: string,
@@ -22,7 +22,7 @@ interface BaseStaticServerOption {
   authFn: (req: IncomingMessage) => Promise<boolean> | boolean;
 }
 
-type StaticServerOption = BaseStaticServerOption;
+export type StaticServerOption = BaseStaticServerOption;
 
 export enum StaticServerStatus {
   running = 'running',

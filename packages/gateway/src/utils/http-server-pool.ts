@@ -1,5 +1,6 @@
 import http from 'node:http';
 import https from 'node:https';
+import http2 from 'node:http2';
 import finalhandler from 'finalhandler';
 import { createSecureContext, SecureContext } from 'node:tls';
 import { getCertByDomain } from './cert';
@@ -14,9 +15,9 @@ export interface HttpUpgradeProcessor {
 }
 
 class HttpServerPool {
-  serverMap = new Map<number, http.Server>();
-  serverRequestProcessors = new WeakMap<http.Server, HttpRequestProcessor[]>();
-  serverUpgradeProcessors = new WeakMap<http.Server, HttpUpgradeProcessor[]>();
+  serverMap = new Map<number, http.Server | http2.Http2SecureServer>();
+  serverRequestProcessors = new WeakMap<http.Server | http2.Http2SecureServer, HttpRequestProcessor[]>();
+  serverUpgradeProcessors = new WeakMap<http.Server | http2.Http2SecureServer, HttpUpgradeProcessor[]>();
   constructor() {
 
   }
@@ -28,7 +29,7 @@ class HttpServerPool {
     }
     cb(new Error('cannot find proper secure context'));
   }
-  getHttpServer(port: number, type?: 'http' | 'https', cert?: Buffer | string, key?: Buffer | string): http.Server | https.Server {
+  getHttpServer(port: number, type?: 'http' | 'https', cert?: Buffer | string, key?: Buffer | string): http.Server | https.Server | http2.Http2SecureServer {
     const server = this.serverMap.get(port);
     if ((type === 'http' && server instanceof https.Server)
       || (type === 'https' && server instanceof http.Server)) {
@@ -41,7 +42,7 @@ class HttpServerPool {
     if (type === 'http') {
       newServer = http.createServer();
     } else {
-      newServer = https.createServer({ SNICallback: this.SNICallback });
+      newServer = http2.createSecureServer({ SNICallback: this.SNICallback, allowHTTP1: true });
     }
     this.serverMap.set(port, newServer);
     newServer.listen(port);

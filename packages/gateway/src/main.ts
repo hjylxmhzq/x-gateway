@@ -2,6 +2,7 @@ import Koa from 'koa';
 import dotenv from 'dotenv';
 import http from 'node:http';
 import https from 'node:https';
+import http2 from 'node:http2';
 import { logger, stringifyError } from './utils/logger';
 import registMiddlewares from './middlewares';
 import registRoutes from './routes';
@@ -64,7 +65,7 @@ async function SNICallback(hostname: string, cb: (err: Error | null, ctx?: Secur
   cb(new Error('cannot find proper secure context'));
 }
 
-const httpsServer = https.createServer({ SNICallback }, app.callback());
+const httpsServer = http2.createSecureServer({ SNICallback, allowHTTP1: true }, app.callback());
 httpsServer.on('upgrade', onUpgrade);
 httpsServer.listen(parseInt(WEB_CLIENT_HTTPS_PORT, 10), WEB_CLIENT_HOST);
 

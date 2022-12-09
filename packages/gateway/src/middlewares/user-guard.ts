@@ -3,6 +3,7 @@ import { getConfig } from '../utils/config';
 
 const ignore = [
   /^\/login$/,
+  /^\/.+\.ico$/,
   /^\/user\/login$/,
   /\/static\/.*\.(js|css|map)$/,
   /^\/manifest\.json$/,
